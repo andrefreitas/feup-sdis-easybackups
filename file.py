@@ -3,6 +3,7 @@ import hashlib
 import os
 import datetime
 
+CHUNK_SIZE=64000 
 
 class InvalidPathError:
 	pass
@@ -11,7 +12,6 @@ class File:
 	def __init__(self, full_path):
 		self.set_full_path(full_path)
 		self.parse_name()
-		self.generate_file_id()
 
 	def parse_name(self):
 		file_extension_pattern="[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$"
@@ -31,7 +31,43 @@ class File:
 		full_path=self.get_full_path()
 		file_id=hashlib.sha256(full_path+modification_date).hexdigest()
 		self.set_file_id(file_id)
-	
+		
+	def generate_chunks(self):
+		f=open(self._full_path, "rb")
+		i=0
+		while True:
+			chunk = f.read(CHUNK_SIZE)
+			if (chunk!=""):	
+				chunk_file=open(self._name.split(".")[0]+"_"+str(i)+".chunk", "wb")
+				chunk_file.write(chunk)
+				chunk_file.close()
+				i+=1
+			else:
+				break
+		f.close()
+		return i
+		
+	def restore_file(self, path):
+		restored_file=open(self._name, "ab")
+		dir_list = os.listdir(path)
+		chunks={}
+		name_without_extension = self._name.split(".")[0]
+		chunk_name_pattern = name_without_extension+"_([0-9]+)\.chunk"
+		
+		# Fetch and sort chunk files
+		for file_name in dir_list:
+			match = re.search(chunk_name_pattern, file_name)
+			if (match):
+				chunks[int(match.group(1))] = file_name
+		
+		# Write chunks to file
+		for i in range(len(chunks)):
+			chunk=open(chunks[i], "rb")
+			restored_file.write(chunk.read())
+			chunk.close()
+			
+		restored_file.close()
+					
 	def set_full_path(self,full_path):
 		self._full_path=full_path
 
