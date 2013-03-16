@@ -8,6 +8,7 @@ CHUNK_SIZE=64000
 class InvalidPathError:
 	pass
 
+
 class File:
 	def __init__(self, full_path):
 		self.set_full_path(full_path)
