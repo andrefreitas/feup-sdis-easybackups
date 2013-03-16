@@ -49,8 +49,9 @@ class File:
 		return i
 		
 	def restore_file(self, path):
-		restored_file=open(self._name, "ab")
+		os.chdir(path)
 		dir_list = os.listdir(path)
+		restored_file=open(self._name, "ab")
 		chunks={}
 		name_without_extension = self._name.split(".")[0]
 		chunk_name_pattern = name_without_extension+"_([0-9]+)\.chunk"
@@ -63,7 +64,8 @@ class File:
 		
 		# Write chunks to file
 		for i in range(len(chunks)):
-			chunk=open(chunks[i], "rb")
+			os.chdir(path)
+			chunk=open(str(chunks[i]), "rb")
 			restored_file.write(chunk.read())
 			chunk.close()
 			

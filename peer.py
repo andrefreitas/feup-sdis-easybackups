@@ -6,6 +6,8 @@ that were generated to send to another peer in the network.
 import os
 import socket
 import struct
+import re
+from file import File
 
 BACKUP_DIR="backup"
 TEMP_DIR="temp"
@@ -35,4 +37,30 @@ class Peer:
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         while True:
             print sock.recv(10240)
+            #self.send_chunk("D:\eclipse\wallpaper.jpg", sock)
+       
+    
+    def send_chunk(self, path, socket):
+        chunks={}
+        f = File(path)
+        dir_list = os.listdir(self.home_dir+"/"+TEMP_DIR)
+        os.chdir(self.home_dir+"/"+TEMP_DIR)
+        f.generate_chunks()
+        i=0
+        for file_name in dir_list:
+            chunk_name_pattern = f.get_name()+"_"+str(i)+"\.chunk"
+            match = re.search(chunk_name_pattern, file_name)
+            i+=1
+            if (match):
+                chunks[int(match.group(1))] = file_name
+                
+        for j in range(len(chunks)):
+            chunk_file = open(str(chunks[j]), "rb")
+            socket.sendall(chunk_file.read())
+            
+    
+        
+        
+        
+        
         
