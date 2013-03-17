@@ -33,8 +33,10 @@ class File:
 		file_id=hashlib.sha256(full_path+modification_date).hexdigest()
 		self.set_file_id(file_id)
 		
-	def generate_chunks(self):
+	def generate_chunks(self, directory=None):
 		f=open(self._full_path, "rb")
+		if(directory):
+			os.chdir(directory)
 		i=0
 		while True:
 			chunk = f.read(CHUNK_SIZE)
@@ -49,18 +51,8 @@ class File:
 		return i
 		
 	def restore_file(self, path):
-		os.chdir(path)
-		dir_list = os.listdir(path)
 		restored_file=open(self._name, "ab")
-		chunks={}
-		name_without_extension = self._name.split(".")[0]
-		chunk_name_pattern = name_without_extension+"_([0-9]+)\.chunk"
-		
-		# Fetch and sort chunk files
-		for file_name in dir_list:
-			match = re.search(chunk_name_pattern, file_name)
-			if (match):
-				chunks[int(match.group(1))] = file_name
+		chunks = self.fetch_chunks(path)
 		
 		# Write chunks to file
 		for i in range(len(chunks)):
@@ -70,7 +62,21 @@ class File:
 			chunk.close()
 			
 		restored_file.close()
-					
+	
+	def fetch_chunks(self, path):
+		dir_list = os.listdir(path)
+		chunks={}
+		name_without_extension = self._name.split(".")[0]
+		chunk_name_pattern = name_without_extension+"_([0-9]+)\.chunk"
+		
+		# Fetch and sort chunk files
+		for file_name in dir_list:
+			match = re.search(chunk_name_pattern, file_name)
+			if (match):
+				chunks[int(match.group(1))] = file_name
+				
+		return chunks
+	
 	def set_full_path(self,full_path):
 		self._full_path=full_path
 
