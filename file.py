@@ -8,6 +8,10 @@ CHUNK_SIZE=64000
 class InvalidPathError:
 	pass
 
+def fix_directory_path(directory):
+	if(directory!="" and (directory[-1]!="/" or directory[-1]!="\\" )):
+		directory=directory+"/"
+	return directory
 
 class File:
 	def __init__(self, full_path):
@@ -33,36 +37,51 @@ class File:
 		file_id=hashlib.sha256(full_path+modification_date).hexdigest()
 		self.set_file_id(file_id)
 		
-	def generate_chunks(self, directory=None):
+	"""
+	Generate the chunks to a given directory. If the directory is not given,
+	generates in the cwd of the program.
+	"""
+		
+	def generate_chunks(self, directory=""):
 		f=open(self._full_path, "rb")
-		if(directory):
-			os.chdir(directory)
+		directory=fix_directory_path(directory)
 		i=0
 		while True:
 			chunk = f.read(CHUNK_SIZE)
 			if (chunk!=""):	
-				chunk_file=open(self._name.split(".")[0]+"_"+str(i)+".chunk", "wb")
+				chunk_file=open(directory+self._name.split(".")[0]+"_"+str(i)+".chunk", "wb")
 				chunk_file.write(chunk)
 				chunk_file.close()
 				i+=1
 			else:
 				break
 		f.close()
+		
 		return i
 		
-	def restore_file(self, path):
-		restored_file=open(self._name, "ab")
-		chunks = self.fetch_chunks(path)
+	"""
+	Restore the file from the chunks by giving the chunk's directory and the directory to restore the file.
+	If the destination directory is not given, will restore in the program cwd.
+	"""
+	def restore_file(self, chunks_directory,destination_directory=""):
+		chunks_directory=fix_directory_path(chunks_directory)
+		destination_directory=fix_directory_path(destination_directory)
+		
+		restored_file=open(destination_directory+self._name, "ab")
+		chunks = self.fetch_chunks(chunks_directory)
 		
 		# Write chunks to file
 		for i in range(len(chunks)):
-			os.chdir(path)
-			chunk=open(str(chunks[i]), "rb")
+			chunk=open(chunks_directory+chunks[i], "rb")
 			restored_file.write(chunk.read())
 			chunk.close()
 			
 		restored_file.close()
 	
+	"""
+	By giving the directory where the chunks are, it gives an dictionary with the
+	name of the N chunks ordered, accessed from 0 to N-1
+	"""
 	def fetch_chunks(self, path):
 		dir_list = os.listdir(path)
 		chunks={}
