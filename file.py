@@ -36,6 +36,7 @@ class File:
 		full_path=self.get_full_path()
 		file_id=hashlib.sha256(full_path+modification_date).hexdigest()
 		self.set_file_id(file_id)
+		return file_id
 		
 	"""
 	Generate the chunks to a given directory. If the directory is not given,

@@ -13,6 +13,8 @@ from threading import Thread
 BACKUP_DIR="backup"
 TEMP_DIR="temp"
 SHELL_PORT=8383
+VERSION="1.0"
+CRLF="\r\n"
 
 class Peer:
     def __init__(self, home_dir,mc_address,mc_port,mdb_address,mdb_port,mdr_address,mdr_port,shell_port=SHELL_PORT):
@@ -25,13 +27,14 @@ class Peer:
         
         
     def init_home_dir(self):
-        backup_path=self.home_dir+"/"+BACKUP_DIR
-        if(not os.path.exists(backup_path)):
-            os.makedirs(backup_path)
+        self.backup_dir=self.home_dir+"/"+BACKUP_DIR
+        if(not os.path.exists(self.backup_dir)):
+            os.makedirs(self.backup_dir)
             
-        temp_path=self.home_dir+"/"+TEMP_DIR
-        if(not os.path.exists(temp_path)):
-            os.makedirs(temp_path)    
+        self.temp_dir=self.home_dir+"/"+TEMP_DIR
+        if(not os.path.exists(self.temp_dir)):
+            os.makedirs(self.temp_dir)
+
     
     def listen_shell(self):    
         while True:
@@ -83,28 +86,22 @@ class Peer:
         operation=args[0]
         if(operation=="backup"):
             file_path=args[1]
-            #replication_degree=int(args[2])
-            file_to_backup=File(file_path)
-            file_to_backup.generate_chunks(self.home_dir+"/"+TEMP_DIR)
+            replication_degree=args[2]
+            self.send_chunks(file_path,replication_degree)
             
         
-    def send_chunk(self, path):
-        chunks={}
+    def send_chunks(self, path,replication_degree):
         f = File(path)
-        dir_list = os.listdir(self.home_dir+"/"+TEMP_DIR)
-        os.chdir(self.home_dir+"/"+TEMP_DIR)
-        f.generate_chunks()
-        i=0
-        for file_name in dir_list:
-            chunk_name_pattern = f.get_name()+"_"+str(i)+"\.chunk"
-            match = re.search(chunk_name_pattern, file_name)
-            i+=1
-            if (match):
-                chunks[int(match.group(1))] = file_name
-                
+        f.generate_chunks(self.temp_dir)
+        chunks=f.fetch_chunks(self.temp_dir)
         for j in range(len(chunks)):
-            chunk_file = open(str(chunks[j]), "rb")
-            self.mdb.sendall(chunk_file.read())
+            chunk_file = open(self.temp_dir + chunks[j], "rb")
+            body=chunk_file.read()
+            file_id=f.generate_file_id()
+            replication_degree=str(replication_degree)
+            chunk_no=str(j)
+            message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
+            self.mdb.sendall(message)
 
         
 p=Peer("/home/andre/easybackup", "224.1.1.1", 5678, "224.1.1.2", 5778, "224.1.1.3", 5878)
