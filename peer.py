@@ -15,7 +15,7 @@ BACKUP_DIR="backup"
 TEMP_DIR="temp"
 
 class Peer:
-    def __init__(self, home_dir,mc,mc_port,mdb,mdb_port,mdr,mdr_port):
+    def __init__(self, home_dir,mc,mc_port,mdb,mdb_port,mdr,mdr_port,shell_port=8383):
         self.home_dir=home_dir
         self.init_home_dir()
         self.mc=mc
@@ -24,6 +24,7 @@ class Peer:
         self.mdb_port=mdb_port
         self.mdr=mdr
         self.mdr_port=mdr_port
+        self.shell_port=shell_port
         
         
     def init_home_dir(self):
@@ -34,20 +35,31 @@ class Peer:
         temp_path=self.home_dir+"/"+TEMP_DIR
         if(not os.path.exists(temp_path)):
             os.makedirs(temp_path)    
+    
+    def listen_shell(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("127.0.0.1", self.shell_port))
         
+        while True:
+            message, address = s.recvfrom(8192)        
+            self.handle_shell_request(message)
+
+    
     def listen_all(self):
+        shell = Thread(target=self.listen_shell, args=())
         mc = Thread(target=self.listen, args=(self.mc,self.mc_port))
         mdb = Thread(target=self.listen, args=(self.mdb,self.mdb_port))
         mdr = Thread(target=self.listen, args=(self.mdr,self.mdr_port))
+        shell.start()
         mdb.start()       
         mc.start()
         mdr.start()
+        shell.join()
         mdb.join()
         mc.join()
         mdr.join()
       
-        
-        
     def listen(self,multicast_address,multicast_port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -55,10 +67,17 @@ class Peer:
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         while True:
-            print sock.recv(10240)
-            #self.send_chunk("D:\eclipse\wallpaper.jpg", sock)
+            message = sock.recv(10240)
+            request = Thread(target=self.handle_request, args=(message,))
+            request.start()
+            request.join()
+            
+    def handle_request(self, message):
+        print message
        
-    
+    def handle_shell_request(self, message):
+        print message
+        
     def send_chunk(self, path, socket):
         chunks={}
         f = File(path)
@@ -76,8 +95,7 @@ class Peer:
         for j in range(len(chunks)):
             chunk_file = open(str(chunks[j]), "rb")
             socket.sendall(chunk_file.read())
-            
-    
+
         
 p=Peer("/home/andre/easybackup", "224.1.1.1", 5678, "224.1.1.2", 5778, "224.1.1.3", 5878)
 p.listen_all()
