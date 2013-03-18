@@ -21,17 +21,23 @@ class Peer:
         self.home_dir=home_dir
         self.init_home_dir()
         self.mc=self.create_multicast_socket(mc_address, mc_port)
+        self.mc_address=mc_address
+        self.mc_port=mc_port
+        self.mdb_address=mdb_address
+        self.mdb_port=mdb_port
+        self.mdr_address=mdr_address
+        self.mdr_port=mdr_port
         self.mdb=self.create_multicast_socket(mdb_address, mdb_port)
         self.mdr=self.create_multicast_socket(mdr_address, mdr_port)
         self.shell=self.create_socket(shell_port)
         
         
     def init_home_dir(self):
-        self.backup_dir=self.home_dir+"/"+BACKUP_DIR
+        self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
         if(not os.path.exists(self.backup_dir)):
             os.makedirs(self.backup_dir)
             
-        self.temp_dir=self.home_dir+"/"+TEMP_DIR
+        self.temp_dir=self.home_dir+"/"+TEMP_DIR+"/"
         if(not os.path.exists(self.temp_dir)):
             os.makedirs(self.temp_dir)
 
@@ -59,7 +65,7 @@ class Peer:
     def create_multicast_socket(self,multicast_address,multicast_port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('', multicast_port))
+        sock.bind((multicast_address, multicast_port))
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return sock
@@ -95,13 +101,13 @@ class Peer:
         f.generate_chunks(self.temp_dir)
         chunks=f.fetch_chunks(self.temp_dir)
         for j in range(len(chunks)):
-            chunk_file = open(self.temp_dir + chunks[j], "rb")
+            chunk_file = open(self.temp_dir +chunks[j], "rb")
             body=chunk_file.read()
             file_id=f.generate_file_id()
             replication_degree=str(replication_degree)
             chunk_no=str(j)
             message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
-            self.mdb.sendall(message)
+            self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
 
         
 p=Peer("/home/andre/easybackup", "224.1.1.1", 5678, "224.1.1.2", 5778, "224.1.1.3", 5878)
