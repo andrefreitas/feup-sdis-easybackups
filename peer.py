@@ -16,6 +16,7 @@ SHELL_PORT=8383
 VERSION="1.0"
 CRLF="\r\n"
 MAX_MESSAGE_SIZE=65565
+TTL=1
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -88,6 +89,8 @@ class Peer:
         sock.bind(("", multicast_port))
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, TTL)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
         return sock
     
     def create_socket(self,port):
@@ -96,8 +99,6 @@ class Peer:
         s.bind(("127.0.0.1", port))
         return  s
     
-
-            
     def handle_request(self, message):
         return None
        
@@ -109,7 +110,7 @@ class Peer:
             replication_degree=args[2]
             self.send_chunks(file_path,replication_degree)
             
-        
+    
     def send_chunks(self, path,replication_degree):
         f = File(path)
         f.generate_chunks(self.temp_dir)
