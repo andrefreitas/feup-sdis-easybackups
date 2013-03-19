@@ -12,7 +12,7 @@ class Shell:
         self.socket.sendto(message, (self.hostname, self.port))
         
     def receive_message(self, message):
-        answer,addr= self.socket.recvfrom(10240)
+        answer= self.socket.recv_into(10240)
         return answer
     
     def backup_file(self, full_path, replication_degree=2):
