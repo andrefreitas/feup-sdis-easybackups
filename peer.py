@@ -17,6 +17,7 @@ VERSION="1.0"
 CRLF="\r\n"
 MAX_MESSAGE_SIZE=65565
 TTL=1
+MY_IP=socket.gethostbyname(socket.getfqdn())
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -57,11 +58,12 @@ class Peer:
     def listen(self,sock,channel):
         while True:
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
-            operation=message.split(" ")[0].strip(' \t\n\r')
-            print_message(channel+" received \"" + operation + "\" from " + str(addr) )    
-            request = Thread(target=self.handle_request, args=(message,))
-            request.start()
-            request.join()
+            if(addr[0]!=MY_IP):  
+                operation=message.split(" ")[0].strip(' \t\n\r')
+                print_message(channel+" received \"" + operation + "\" from " + str(addr) )
+                request = Thread(target=self.handle_request, args=(message,))
+                request.start()
+                request.join()
     
     def listen_all(self):
         print_message("Starting EasyBackup Peer Daemon with PID " + str(os.getpid()) + " ...")
@@ -110,7 +112,7 @@ class Peer:
             replication_degree=args[2]
             self.send_chunks(file_path,replication_degree)
             
-    
+        
     def send_chunks(self, path,replication_degree):
         f = File(path)
         f.generate_chunks(self.temp_dir)
