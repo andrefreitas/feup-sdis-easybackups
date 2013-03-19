@@ -120,7 +120,3 @@ class Peer:
             chunk_no=str(j)
             message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
             self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
-
-        
-p=Peer("/home/andre/easybackup", "224.1.1.1", 5678, "224.1.1.2", 5778, "224.1.1.3", 5878)
-p.listen_all()
