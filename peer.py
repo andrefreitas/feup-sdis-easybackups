@@ -15,6 +15,7 @@ TEMP_DIR="temp"
 SHELL_PORT=8383
 VERSION="1.0"
 CRLF="\r\n"
+MAX_MESSAGE_SIZE=65565
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -48,10 +49,18 @@ class Peer:
     
     def listen_shell(self):    
         while True:
-            message = self.shell.recvfrom(8192)[0]  
+            message = self.shell.recvfrom(MAX_MESSAGE_SIZE)[0]  
             print_message("Shell received \"" + message[:len(message)-1]+"\"")    
             self.handle_shell_request(message)
-
+            
+    def listen(self,sock,channel):
+        while True:
+            message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
+            operation=message.split(" ")[0].strip(' \t\n\r')
+            print_message(channel+" received \"" + operation + "\" from " + str(addr) )    
+            request = Thread(target=self.handle_request, args=(message,))
+            request.start()
+            request.join()
     
     def listen_all(self):
         print_message("Starting EasyBackup Peer Daemon with PID " + str(os.getpid()) + " ...")
@@ -76,7 +85,7 @@ class Peer:
     def create_multicast_socket(self,multicast_address,multicast_port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((multicast_address, multicast_port))
+        sock.bind(("", multicast_port))
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return sock
@@ -87,17 +96,10 @@ class Peer:
         s.bind(("127.0.0.1", port))
         return  s
     
-    def listen(self,sock,channel):
-        while True:
-            message,addr = sock.recvfrom(10240)
-            operation=message.split(" ")[0]
-            print_message(channel+" received " + operation + " from " + str(addr) )    
-            request = Thread(target=self.handle_request, args=(message,))
-            request.start()
-            request.join()
+
             
     def handle_request(self, message):
-        a=""
+        return None
        
     def handle_shell_request(self, message):
         args=message.split(" ")

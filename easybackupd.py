@@ -1,6 +1,6 @@
 from peer import Peer
 from os.path import expanduser
-import ConfigParser, os
+import ConfigParser
 
 """ This module runs the EasyBackup Daemon """
 
