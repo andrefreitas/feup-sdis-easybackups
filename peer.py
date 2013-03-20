@@ -17,7 +17,7 @@ VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
 TTL=1
-MY_IP=socket.gethostbyname(socket.getfqdn())
+MY_IP=socket.gethostbyname(socket.gethostname())
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
