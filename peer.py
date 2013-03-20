@@ -6,9 +6,12 @@ that were generated to send to another peer in the network.
 import os
 import socket
 import struct
+import random
+import time
 from file import File
 from threading import Thread
 from datetime import datetime
+
 
 BACKUP_DIR="backup"
 TEMP_DIR="temp"
@@ -92,7 +95,7 @@ class Peer:
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, TTL)
-        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 0)
         return sock
     
     def create_socket(self,port):
@@ -114,6 +117,11 @@ class Peer:
         chunk_file = open(self.backup_dir+fileid+"_"+chunkno+".chunk", "wb")
         chunk_file.write(chunk)
         chunk_file.close()
+        delay=random.randint(0,400)/1000.0
+        time.sleep(delay)
+        message="STORED " + VERSION +  " " +  fileid + " " + chunkno +CRLF+CRLF
+        self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+        
         
     def handle_shell_request(self, message):
         args=message.split(" ")
