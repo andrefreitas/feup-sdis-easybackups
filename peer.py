@@ -17,7 +17,6 @@ VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
 TTL=1
-MY_IP=socket.gethostbyname(socket.gethostname())
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -58,12 +57,11 @@ class Peer:
     def listen(self,sock,channel):
         while True:
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
-            if(addr[0]!=MY_IP or True):  
-                operation=message.split(" ")[0].strip(' \t\n\r')
-                print_message(channel+" received \"" + operation + "\" from " + str(addr) )
-                request = Thread(target=self.handle_request, args=(message,))
-                request.start()
-                request.join()
+            operation=message.split(" ")[0].strip(' \t\n\r')
+            print_message(channel+" received \"" + operation + "\" from " + str(addr) )
+            request = Thread(target=self.handle_request, args=(message,))
+            request.start()
+            request.join()
     
     def listen_all(self):
         print_message("Starting EasyBackup Peer Daemon with PID " + str(os.getpid()) + " ...")
@@ -92,7 +90,7 @@ class Peer:
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, TTL)
-        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 0)
         return sock
     
     def create_socket(self,port):
