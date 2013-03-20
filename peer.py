@@ -68,7 +68,11 @@ class Peer:
             request.join()
     
     def listen_all(self):
-        print_message("Starting EasyBackup Peer Daemon with PID " + str(os.getpid()) + " ...")
+        pid=str(os.getpid())
+        print_message("Starting EasyBackup Peer Daemon with PID " + pid + " ...")
+        f=open(self.home_dir+"/pid.txt","w")
+        f.write(pid)
+        f.close()
         shell = Thread(target=self.listen_shell, args=())
         mc = Thread(target=self.listen, args=(self.mc,"MC"))
         mdb = Thread(target=self.listen, args=(self.mdb,"MDB"))
