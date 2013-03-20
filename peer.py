@@ -8,6 +8,7 @@ import socket
 import struct
 import random
 import time
+import re
 from file import File
 from threading import Thread,Timer
 from datetime import datetime
@@ -20,6 +21,8 @@ VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
 TTL=1
+MAX_ATTEMPTS=5
+TIMEOUT=0.5
 quit_waiting=False
 
 def print_message(message):
@@ -63,9 +66,8 @@ class Peer:
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
             operation=message.split(" ")[0].strip(' \t\n\r')
             print_message(channel+" received \"" + operation + "\" from " + str(addr) )
-            request = Thread(target=self.handle_request, args=(message,))
-            request.start()
-            request.join()
+            self.handle_request(message)
+
     
     def listen_all(self):
         pid=str(os.getpid())
@@ -74,20 +76,20 @@ class Peer:
         f.write(pid)
         f.close()
         shell = Thread(target=self.listen_shell, args=())
-        mc = Thread(target=self.listen, args=(self.mc,"MC"))
+        #mc = Thread(target=self.listen, args=(self.mc,"MC"))
         mdb = Thread(target=self.listen, args=(self.mdb,"MDB"))
         mdr = Thread(target=self.listen, args=(self.mdr,"MDR"))
         shell.start()
         print_message("Shell listening at UDP port " + str(self.shell_port))
         mdb.start()  
         print_message("MDB listening at Multicast group "+ self.mdb_address + " and port " + str(self.mdb_port))     
-        mc.start()
+        #mc.start()
         print_message("MC listening at Multicast group "+ self.mc_address + " and port " + str(self.mc_port))
         mdr.start()
         print_message("MDR listening at Multicast group "+ self.mdr_address + " and port " + str(self.mdr_port))
         shell.join()
         mdb.join()
-        mc.join()
+        #mc.join()
         mdr.join()
 
     
@@ -98,7 +100,7 @@ class Peer:
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, TTL)
-        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 0)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
         return sock
     
     def create_socket(self,port):
@@ -132,7 +134,10 @@ class Peer:
         if(operation=="backup"):
             file_path=args[1]
             replication_degree=args[2]
-            self.send_chunks(file_path,replication_degree)
+            if(self.send_chunks(file_path,replication_degree)):
+                self.shell.sendto("ok\n", ("127.0.0.1", self.shell_port))
+            else:
+                self.shell.sendto("fail\n", ("127.0.0.1", self.shell_port))
             
         
     def send_chunks(self, path,replication_degree):
@@ -146,8 +151,43 @@ class Peer:
             replication_degree=str(replication_degree)
             chunk_no=str(j)
             message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
-            self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+            acks=False
+            attempts=0
+            timeout=TIMEOUT
+            while(not acks and attempts<MAX_ATTEMPTS):   
+                self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+                if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
+                    acks=True
+                timeout*=2
+                attempts+=1
+            return acks
+                
     
-
+    def check_replication_degree(self, file_id, chunk_no, replication_degree,timeout):
+        replication_degree=int(replication_degree)
+        global quit_waiting
+        acks=0
+        timeout_check = Timer(timeout, self.quit_waiting)
+        quit_waiting=False
+        timeout_check.start()
+        while (acks < replication_degree and not quit_waiting):
+            message=None
+            try:
+                self.mc.settimeout(timeout)
+                message = self.mc.recv(MAX_MESSAGE_SIZE)
+                message_expected="^STORED " + VERSION +  " " +  file_id + " " + chunk_no
+                if (re.search(message_expected,message)):
+                    acks += 1
+            except:
+                pass
+            self.mc.setblocking(1)
+        
+        if(quit_waiting and acks < replication_degree):
+            print_message("Timeout getting the desired replication degree")
+        return acks==replication_degree     
+    
+    def quit_waiting(self):
+        global quit_waiting
+        quit_waiting = True
             
     
