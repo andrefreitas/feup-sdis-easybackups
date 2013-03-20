@@ -9,7 +9,7 @@ import struct
 import random
 import time
 from file import File
-from threading import Thread
+from threading import Thread,Timer
 from datetime import datetime
 
 
@@ -20,7 +20,7 @@ VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
 TTL=1
-MY_IP=socket.gethostbyname(socket.gethostname())
+quit_waiting=False
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -61,12 +61,11 @@ class Peer:
     def listen(self,sock,channel):
         while True:
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
-            if(addr[0]!=MY_IP or True):  
-                operation=message.split(" ")[0].strip(' \t\n\r')
-                print_message(channel+" received \"" + operation + "\" from " + str(addr) )
-                request = Thread(target=self.handle_request, args=(message,))
-                request.start()
-                request.join()
+            operation=message.split(" ")[0].strip(' \t\n\r')
+            print_message(channel+" received \"" + operation + "\" from " + str(addr) )
+            request = Thread(target=self.handle_request, args=(message,))
+            request.start()
+            request.join()
     
     def listen_all(self):
         print_message("Starting EasyBackup Peer Daemon with PID " + str(os.getpid()) + " ...")
@@ -120,7 +119,7 @@ class Peer:
         delay=random.randint(0,400)/1000.0
         time.sleep(delay)
         message="STORED " + VERSION +  " " +  fileid + " " + chunkno +CRLF+CRLF
-        self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+        self.mc.sendto(message, (self.mc_address, self.mc_port))
         
         
     def handle_shell_request(self, message):
@@ -144,3 +143,7 @@ class Peer:
             chunk_no=str(j)
             message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
             self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+    
+
+            
+    
