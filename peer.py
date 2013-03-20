@@ -14,7 +14,7 @@ BACKUP_DIR="backup"
 TEMP_DIR="temp"
 SHELL_PORT=8383
 VERSION="1.0"
-CRLF="\r\n"
+CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
 TTL=1
 MY_IP=socket.gethostbyname(socket.getfqdn())
@@ -58,7 +58,7 @@ class Peer:
     def listen(self,sock,channel):
         while True:
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
-            if(addr[0]!=MY_IP):  
+            if(addr[0]!=MY_IP or True):  
                 operation=message.split(" ")[0].strip(' \t\n\r')
                 print_message(channel+" received \"" + operation + "\" from " + str(addr) )
                 request = Thread(target=self.handle_request, args=(message,))
@@ -102,8 +102,19 @@ class Peer:
         return  s
     
     def handle_request(self, message):
-        return None
+        operation=message.split(" ")[0].strip(' \t\n\r')
+        if (operation == "PUTCHUNK"):
+            self.backup_chunk(message)
        
+    def backup_chunk(self, message):
+        message_list=message.split(" ")
+        fileid=message_list[2]
+        chunkno=message_list[3]
+        chunk = message.split(CRLF+CRLF)[1]
+        chunk_file = open(self.backup_dir+fileid+"_"+chunkno+".chunk", "wb")
+        chunk_file.write(chunk)
+        chunk_file.close()
+        
     def handle_shell_request(self, message):
         args=message.split(" ")
         operation=args[0]
