@@ -63,7 +63,6 @@ class Peer:
     def listen_shell(self):    
         while True:
             message = self.shell.recvfrom(MAX_MESSAGE_SIZE)[0]  
-            print_message("Shell received \"" + message[:len(message)-1]+"\"")    
             self.handle_shell_request(message)
             
     def listen(self,sock,channel):
