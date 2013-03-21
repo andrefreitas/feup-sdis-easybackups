@@ -22,6 +22,8 @@ class Shell:
             directory = os.getcwd()+"/"
         self.send_message("backup "+directory+full_path+" "+str(replication_degree)+"\n")
     
+
+    
     
     
         

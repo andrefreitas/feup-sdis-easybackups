@@ -10,6 +10,7 @@ while(True):
     operation=command[0]
     if (operation == "help"):
         print "    - backup <file> (<replication degree>)"
+        print "    - restore <file>"
         print "    - exit"
     elif (operation=="backup"):
         file_name=command[1]
@@ -17,6 +18,7 @@ while(True):
         if (len(command)==3):
             replication_degree=int(command[2])
         shell.backup_file(file_name, replication_degree)
+
     elif(operation=="exit"):
         break
         
