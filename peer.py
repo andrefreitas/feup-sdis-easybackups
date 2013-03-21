@@ -155,6 +155,7 @@ class Peer:
         for j in range(len(chunks)):
             chunk_file = open(self.temp_dir +chunks[j], "rb")
             body=chunk_file.read()
+            chunk_file.close()
             file_id=f.generate_file_id()
             replication_degree=str(replication_degree)
             chunk_no=str(j)
@@ -168,6 +169,7 @@ class Peer:
                     acks=True
                 timeout*=2
                 attempts+=1
+            self.clean_temp(f.get_name())
             return acks
                 
     
@@ -191,5 +193,12 @@ class Peer:
     def quit_waiting(self):
         global quit_waiting
         quit_waiting = True
-            
+        
+    def clean_temp(self, file_id):
+        file_id = file_id.split(".")[0]
+        list_dir = os.listdir(self.temp_dir)
+        for file_name in list_dir:
+            match = re.search(file_id, file_name)
+            if (match):
+                os.remove(self.temp_dir+file_name)      
     
