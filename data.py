@@ -1,5 +1,5 @@
 import sqlite3
-from os.path import expanduser
+
 class Data:
     def __init__(self, database):
         self.conection = sqlite3.connect(database)
@@ -22,11 +22,13 @@ class Data:
         return result[0][0] if(len(result)) else False
         
     def add_modification(self,file_name,sha256,chunks,date):
-        file_id=self.get_file_id(file_name)
-        if(not file_id): return False
-        sql="INSERT INTO modifications(sha256,file_id,chunks,date_modified)"
-        sql+="VALUES (\""+sha256+"\","+ str(file_id) + "," + str(chunks) + ",\""+date+"\")"
-        self.query(sql)
+        if (not self.get_modification_id(sha256)):
+            file_id=self.get_file_id(file_name)
+            if(not file_id): return False
+            sql="INSERT INTO modifications(sha256,file_id,chunks,date_modified)"
+            sql+="VALUES (\""+sha256+"\","+ str(file_id) + "," + str(chunks) + ",\""+date+"\")"
+            self.query(sql)
+            return True
         return True
     
     def get_modification_id(self,sha256):
@@ -36,10 +38,15 @@ class Data:
     def add_chunk(self,modification_sha256,number,replication_degree):
         modification_id=self.get_modification_id(modification_sha256)
         if(not modification_id): return False
-        sql="INSERT INTO chunks(number,replication_degree,modification_id)"
-        sql+="VALUES ("+str(number)+","+str(replication_degree)+","+str(modification_id)+")"
-        self.query(sql)
+        if(not self.chunk_exist(number, replication_degree, modification_id)):            
+            sql="INSERT INTO chunks(number,replication_degree,modification_id)"
+            sql+="VALUES ("+str(number)+","+str(replication_degree)+","+str(modification_id)+")"
+            self.query(sql)
         return True
+    
+    def chunk_exist(self, number, replication_degree, modification_id):
+        sql = "SELECT * from chunks where number = " + str(number) + " and replication_degree = " + str(replication_degree) + " and modification_id = " + str(modification_id)
+        return len(self.query(sql))>0      
     
     def get_file_modifications(self,file_name):
         file_id=self.get_file_id(file_name)

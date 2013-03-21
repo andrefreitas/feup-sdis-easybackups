@@ -13,6 +13,7 @@ import shutil
 from file import File
 from threading import Thread,Timer
 from datetime import datetime
+from data import Data
 
 
 BACKUP_DIR="backup"
@@ -27,7 +28,6 @@ TIMEOUT=0.5
 quit_waiting=False
 subscriptions={}
 restored={}
-
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -47,8 +47,9 @@ class Peer:
         self.mdr=self.create_multicast_socket(mdr_address, mdr_port)
         self.shell_port=shell_port
         self.shell=self.create_socket(self.shell_port)
-        
-        
+        self.db_path = self.home_dir + "/data.db"
+        self.db_path = self.db_path.decode("latin1")
+
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
         if(not os.path.exists(self.backup_dir)):
@@ -177,13 +178,18 @@ class Peer:
         
     def send_chunks(self, path,replication_degree):
         f = File(path)
-        f.generate_chunks(self.temp_dir)
+        data = Data(self.db_path)
+        if (not data.get_file_id(path)):
+            data.add_file(path)
+        chunks_number = f.generate_chunks(self.temp_dir)
+        file_id=f.generate_file_id()
+        date = f.get_modification_date()
+        data.add_modification(path, file_id, chunks_number, date)
         chunks=f.fetch_chunks(self.temp_dir)
         for j in range(len(chunks)):
             chunk_file = open(self.temp_dir +chunks[j], "rb")
             body=chunk_file.read()
             chunk_file.close()
-            file_id=f.generate_file_id()
             replication_degree=str(replication_degree)
             chunk_no=str(j)
             message="PUTCHUNK " + VERSION + " " + file_id + " " + chunk_no + " " + replication_degree + CRLF + CRLF + body
@@ -194,10 +200,11 @@ class Peer:
                 self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
                 if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
                     acks=True
+                    data.add_chunk(file_id, chunk_no, replication_degree)
                 timeout*=2
                 attempts+=1
-            self.clean_temp(f.get_name())
-            return acks
+        self.clean_temp(f.get_name())
+        return acks
                 
     
     def check_replication_degree(self, file_id, chunk_no, replication_degree,timeout):
