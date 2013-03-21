@@ -9,6 +9,7 @@ import struct
 import random
 import time
 import re
+import shutil
 from file import File
 from threading import Thread,Timer
 from datetime import datetime
@@ -53,7 +54,9 @@ class Peer:
         self.temp_dir=self.home_dir+"/"+TEMP_DIR+"/"
         if(not os.path.exists(self.temp_dir)):
             os.makedirs(self.temp_dir)
-
+            
+        if(not os.path.exists(self.home_dir+"/data.db")):
+            shutil.copy2("data.db", self.home_dir)
     
     def listen_shell(self):    
         while True:
