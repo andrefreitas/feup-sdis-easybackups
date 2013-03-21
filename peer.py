@@ -134,7 +134,7 @@ class Peer:
         if(operation=="backup"):
             file_path=args[1]
             replication_degree=args[2]
-            if(self.send_chunks(file_path,replication_degree)):
+            if(self.send_chunks(file_path,int(replication_degree))):
                 self.shell.sendto("ok\n", ("127.0.0.1", self.shell_port))
             else:
                 self.shell.sendto("fail\n", ("127.0.0.1", self.shell_port))
