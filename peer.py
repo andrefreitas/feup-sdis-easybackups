@@ -25,6 +25,8 @@ TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
 quit_waiting=False
+subscriptions={}
+
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -66,7 +68,11 @@ class Peer:
             
     def listen(self,sock,channel):
         while True:
+            global subscriptions
             message,addr = sock.recvfrom(MAX_MESSAGE_SIZE)
+            if message in subscriptions:
+                value = subscriptions[message]
+                subscriptions[message] = int(value)+1
             operation=message.split(" ")[0].strip(' \t\n\r')
             print_message(channel+" received \"" + operation + "\" from " + str(addr) )
             self.handle_request(message)
@@ -79,20 +85,20 @@ class Peer:
         f.write(pid)
         f.close()
         shell = Thread(target=self.listen_shell, args=())
-        #mc = Thread(target=self.listen, args=(self.mc,"MC"))
+        mc = Thread(target=self.listen, args=(self.mc,"MC"))
         mdb = Thread(target=self.listen, args=(self.mdb,"MDB"))
         mdr = Thread(target=self.listen, args=(self.mdr,"MDR"))
         shell.start()
         print_message("Shell listening at UDP port " + str(self.shell_port))
         mdb.start()  
         print_message("MDB listening at Multicast group "+ self.mdb_address + " and port " + str(self.mdb_port))     
-        #mc.start()
+        mc.start()
         print_message("MC listening at Multicast group "+ self.mc_address + " and port " + str(self.mc_port))
         mdr.start()
         print_message("MDR listening at Multicast group "+ self.mdr_address + " and port " + str(self.mdr_port))
         shell.join()
         mdb.join()
-        #mc.join()
+        mc.join()
         mdr.join()
 
     
@@ -173,17 +179,11 @@ class Peer:
         timeout_check = Timer(timeout, self.quit_waiting)
         quit_waiting=False
         timeout_check.start()
+        message_expected="STORED " + VERSION +  " " +  file_id + " " + chunk_no + CRLF + CRLF
+        global subscriptions
+        subscriptions[message_expected] = 0
         while (acks < replication_degree and not quit_waiting):
-            message=None
-            try:
-                self.mc.settimeout(timeout)
-                message = self.mc.recv(MAX_MESSAGE_SIZE)
-                message_expected="^STORED " + VERSION +  " " +  file_id + " " + chunk_no
-                if (re.search(message_expected,message)):
-                    acks += 1
-            except:
-                pass
-            self.mc.setblocking(1)
+            acks = subscriptions[message_expected]
         
         if(quit_waiting and acks < replication_degree):
             print_message("Timeout getting the desired replication degree")
