@@ -11,22 +11,17 @@ CREATE TABLE files(
 /* A certain file can be modified several times so, for a given 
 record from files, there are a lot records in files_modified.
 */
-DROP TABLE IF EXISTS files_modified;
-CREATE TABLE files_modified(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	file_id VARCHAR(300) NOT NULL, /* SHA256 */
-	file INTEGER NOT NULL,
+DROP TABLE IF EXISTS modifications;
+CREATE TABLE modifications(
+	id VARCHAR(300) PRIMARY KEY NOT NULL, /* SHA256 */
 	date_modified DATE NOT NULL,
 	chunks INTEGER NOT NULL,
-	FOREIGN KEY(file) REFERENCES files(id)
+	file_id INTEGER NOT NULL REFERENCES files(id)
 );
 
-/* When a file is deleted, all the records from filed_modified 
-should be deleted */
-
-DROP TRIGGER IF EXISTS delete_files_modified;
-CREATE TRIGGER delete_files_modified
+DROP TRIGGER IF EXISTS drop_modifications;
+CREATE TRIGGER drop_modifications
 AFTER DELETE ON files
 BEGIN
-	DELETE FROM files_modified WHERE file=OLD.id;
+	DELETE FROM modifications WHERE file_id=OLD.id;
 END;
