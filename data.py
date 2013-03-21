@@ -5,48 +5,66 @@ class Data:
         self.conection = sqlite3.connect(database)
         self.cursor = self.conection.cursor()
     
-    def add_file(self, file_name, file_id, date_modified, chunk_no):
-        db_file_id = self.get_file_id(file_name)
-        if (db_file_id == -1):
-            self.cursor.execute("insert into files values(?)", (file_name))
-            self.cursor.commit()
-            db_file_id = self.get_file_id(file_name)
- 
-        self.cursor.execute("insert into files_modified values (?, ?, ?, ?)", (file_id, db_file_id, date_modified, chunk_no))
-        self.cursor.commit()
-        self.cursor.close()
- 
-    
-    def get_file_id (self, file_name):
-        try:
-            self.cursor.execute("select * from files where name = " + file_name)
-            db_id = self.cursor.fetchone()['id']
-            return db_id
-        except:
-            return -1
+    def query(self,query):
+        self.cursor.execute(query)
+        self.conection.commit()
+        return self.cursor.fetchall()
         
-    def get_file_history(self, file_name):
-        db_file_id = self.get_file_id(file_name)
-        if (db_file_id != -1):
-            self.cursor.execute("select * from files_modified where file = " + db_file_id)
-            
-    
-    def delete_file_instance (self, file_name, date_modified):
-        db_file_id = self.get_file_id(file_name)
-        if (db_file_id == -1):
+    def add_file(self, name):
+        try:
+            self.query("INSERT INTO files(name) VALUES (\""+name+"\")")
+            return True
+        except:
             return False
-        else:
-            self.cursor.execute("select * from files_modified where file = " + db_file_id + " and date_modified = " + date_modified)
-            db_modified_id = self.cursor.fetchone()['id']
-            self.cursor.execute("delete from files_modified where id = " + db_modified_id)
-            self.cursor.commit()
-            
-    def delete_file (self, file_name):
-        db_file_id = self.get_file_id(file_name)
-        if (db_file_id != -1):
-            self.cursor.execute("delete from files where id = " + db_file_id)
+    
+    def get_file_id(self,name):
+        result=self.query("SELECT * FROM files WHERE name=\""+name+"\"")
+        return result[0][0] if(len(result)) else False
+        
+    def add_modification(self,file_name,sha256,chunks,date):
+        file_id=self.get_file_id(file_name)
+        if(not file_id): return False
+        sql="INSERT INTO modifications(sha256,file_id,chunks,date_modified)"
+        sql+="VALUES (\""+sha256+"\","+ str(file_id) + "," + str(chunks) + ",\""+date+"\")"
+        self.query(sql)
         return True
+    
+    def get_modification_id(self,sha256):
+        result=self.query("SELECT * FROM modifications WHERE sha256=\""+sha256+"\"")
+        return result[0][0] if(len(result)) else False
+        
+    def add_chunk(self,modification_sha256,number,replication_degree):
+        modification_id=self.get_modification_id(modification_sha256)
+        if(not modification_id): return False
+        sql="INSERT INTO chunks(number,replication_degree,modification_id)"
+        sql+="VALUES ("+str(number)+","+str(replication_degree)+","+str(modification_id)+")"
+        self.query(sql)
+        return True
+    
+    def get_file_modifications(self,file_name):
+        file_id=self.get_file_id(file_name)
+        if(not file_id): return False
+        return self.query("SELECT * FROM modifications WHERE file_id="+str(file_id))
+        
+    def get_modification_chunks(self,modification_sha256):
+        modification_id=self.get_modification_id(modification_sha256) 
+        if(not modification_id): return False
+        return self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id))
+    
+    def get_modifications(self):
+        return self.query("SELECT * FROM modifications")
+    
+    def get_files(self):
+        return self.query("SELECT * FROM files")
+    
+    def get_chunks(self):
+        return self.query("SELECT * FROM chunks")
+    
+   
+    
 # Tests
 #path = expanduser("~") + "/easybackup/data.db"
 #c=sqlite3.connect(path.decode("latin1"))
-c=Data("c:\git\easybackup\data.db")
+#conn=sqlite3.connect("c:\git\easybackup\data.db")
+#c = conn.cursor()
+# c=Data("c:\git\easybackup\data.db")
