@@ -129,8 +129,10 @@ class Peer:
             replication_degree=args[2]
             if(self.send_chunks(file_path,int(replication_degree))):
                 self.shell.sendto("ok\n", ("127.0.0.1", self.shell_port))
+                print "Ok"
             else:
                 self.shell.sendto("fail\n", ("127.0.0.1", self.shell_port))
+                print "Fail"
     
     def handle_request(self, message):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -186,6 +188,7 @@ class Peer:
         date = f.get_modification_date()
         data.add_modification(path, file_id, chunks_number, date)
         chunks=f.fetch_chunks(self.temp_dir)
+        acks_chunks=0
         for j in range(len(chunks)):
             chunk_file = open(self.temp_dir +chunks[j], "rb")
             body=chunk_file.read()
@@ -203,8 +206,9 @@ class Peer:
                     data.add_chunk(file_id, chunk_no, replication_degree)
                 timeout*=2
                 attempts+=1
+            if(acks): acks_chunks+=1
         self.clean_temp(f.get_name())
-        return acks
+        return (acks_chunks==chunks_number)
                 
     
     def check_replication_degree(self, file_id, chunk_no, replication_degree,timeout):
