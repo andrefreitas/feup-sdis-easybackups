@@ -25,7 +25,7 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-quit_waiting=False
+waiting=False
 subscriptions={}
 restored={}
 
@@ -149,8 +149,9 @@ class Peer:
         chunk_file = open(self.backup_dir+file_id+"_"+chunk_no+".chunk", "wb")
         chunk_file.write(chunk)
         chunk_file.close()
-        delay=random.randint(0,400)/1000.0
-        time.sleep(delay)
+        delay=random.randint(0,400)
+        d = delay/1000.0
+        time.sleep(d)
         message="STORED " + VERSION +  " " +  file_id + " " + chunk_no + CRLF + CRLF
         self.mc.sendto(message, (self.mc_address, self.mc_port))
     
@@ -199,7 +200,7 @@ class Peer:
             acks=False
             attempts=0
             timeout=TIMEOUT
-            while(not acks and attempts<MAX_ATTEMPTS):   
+            while(not acks and attempts<MAX_ATTEMPTS):
                 self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
                 if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
                     acks=True
@@ -208,29 +209,31 @@ class Peer:
                 attempts+=1
             if(acks): acks_chunks+=1
         self.clean_temp(f.get_name())
-        return (acks_chunks==chunks_number)
+        return (acks_chunks>=chunks_number)
                 
     
     def check_replication_degree(self, file_id, chunk_no, replication_degree,timeout):
         replication_degree=int(replication_degree)
-        global quit_waiting
         acks=0
+        global waiting
+        waiting=False
         timeout_check = Timer(timeout, self.quit_waiting)
-        quit_waiting=False
         timeout_check.start()
         message_expected="STORED " + VERSION +  " " +  file_id + " " + chunk_no + CRLF + CRLF
         global subscriptions
         subscriptions[message_expected] = 0
-        while (acks < replication_degree and not quit_waiting):
+        while (acks < replication_degree and not waiting):
             acks = subscriptions[message_expected]
         
-        if(quit_waiting and acks < replication_degree):
+        if(waiting and acks < replication_degree):
             print_message("Timeout getting the desired replication degree")
+        
+        timeout_check.cancel()
         return acks==replication_degree     
     
     def quit_waiting(self):
-        global quit_waiting
-        quit_waiting = True
+        global waiting
+        waiting = True
         
     def clean_temp(self, file_id):
         file_id = file_id.split(".")[0]
