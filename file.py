@@ -64,12 +64,15 @@ class File:
 	Restore the file from the chunks by giving the chunk's directory and the directory to restore the file.
 	If the destination directory is not given, will restore in the program cwd.
 	"""
-	def restore_file(self, chunks_directory,destination_directory=""):
+	def restore_file(self, chunks_directory, file_id, destination_directory=""):
 		chunks_directory=fix_directory_path(chunks_directory)
 		destination_directory=fix_directory_path(destination_directory)
 		
+		if (os.path.exists(destination_directory+self._name)):
+			os.remove(destination_directory+self._name)
+			
 		restored_file=open(destination_directory+self._name, "ab")
-		chunks = self.fetch_chunks(chunks_directory)
+		chunks = self.fetch_chunks_restore(chunks_directory, file_id)
 		
 		# Write chunks to file
 		for i in range(len(chunks)):
@@ -78,6 +81,19 @@ class File:
 			chunk.close()
 			
 		restored_file.close()
+		
+	def fetch_chunks_restore(self, path, file_id):
+		dir_list = os.listdir(path)
+		chunks={}
+		chunk_name_pattern = file_id+"_([0-9]+)\.chunk"
+		
+		# Fetch and sort chunk files
+		for file_name in dir_list:
+			match = re.search(chunk_name_pattern, file_name)
+			if (match):
+				chunks[int(match.group(1))] = file_name
+				
+		return chunks
 	
 	"""
 	By giving the directory where the chunks are, it gives an dictionary with the

@@ -26,6 +26,7 @@ TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
 waiting=False
+restore_waiting=False
 subscriptions={}
 restored={}
 
@@ -78,8 +79,6 @@ class Peer:
             if message in subscriptions:
                 value = subscriptions[message]
                 subscriptions[message] = int(value)+1
-            elif message in restored:
-                restored[message] = True 
             operation=message.split(" ")[0].strip(' \t\n\r')
             print_message(channel+" received \"" + operation + "\" from " + str(addr) )
             self.handle_request(message)
@@ -146,17 +145,23 @@ class Peer:
                 message+= " " + modification_date
             self.shell.sendto(message,addr)
         elif(operation=="restoremodification"):
-            print message
-    
-             
-            
+            file_name = args[1]
+            option = int(args[2])
+            modification = data.get_file_modifications(file_name)[option-1]
+            sha256 = modification[1]
+            chunks = int(modification[3])
+            if (self.restore_file_modification(sha256, chunks)):
+                self.get_file(sha256, file_name)
     
     def handle_request(self, message):
         operation=message.split(" ")[0].strip(' \t\n\r')
+        message=message.strip(' \t\n\r')
         if (operation == "PUTCHUNK"):
             self.backup_chunk(message)
         elif(operation == "GETCHUNK"):
-            self.restore_chunk(message)
+            self.get_and_send_chunk(message)
+        elif(operation == "CHUNK"):
+            self.save_chunk_to_restore(message)
        
     def backup_chunk(self, message):
         message_list=message.split(" ")
@@ -171,31 +176,81 @@ class Peer:
         time.sleep(d)
         message="STORED " + VERSION +  " " +  file_id + " " + chunk_no + CRLF + CRLF
         self.mc.sendto(message, (self.mc_address, self.mc_port))
-    
-    def restore_chunk(self, message):
+
+        
+    def get_file(self, sha256, file_name):
+        f = File(file_name)
+        f.generate_file_id()
+        f.restore_file(self.temp_dir, sha256, self.temp_dir)
+        
+    def restore_file_modification(self, file_id, chunks):
+        total_chunks=0
+        for i in range(chunks):
+            message = "GETCHUNK " + VERSION + " " + file_id + " " + str(i) + CRLF + CRLF
+            message_expected = "CHUNK " + VERSION + " " + file_id + " " + str(i)
+            restored[message_expected] = False
+            chunk_received = False
+            attempts=0
+            timeout = TIMEOUT
+            while (not chunk_received and attempts < MAX_ATTEMPTS):
+                self.mc.sendto(message, (self.mc_address, self.mc_port))
+                if (self.check_received_chunk(message_expected, timeout)):
+                    chunk_received = True
+                    total_chunks+=1
+                else:
+                    timeout*=2
+                    attempts+=1
+            
+        return total_chunks == chunks
+
+    def check_received_chunk(self, message_expected, timeout):
+        global restore_waiting
+        chunk_received=False
+        timeout_check = Timer(timeout, self.restore_waiting)
+        timeout_check.start()
+        while (not chunk_received and not restore_waiting):
+            chunk_received = restored[message_expected]
+        
+        timeout_check.cancel()
+        if (not chunk_received):
+                print "Timeout while getting chunk."
+        else:
+            del restored[message_expected]
+        
+        return chunk_received      
+        
+    def restore_waiting(self):
+        global restore_waiting
+        restore_waiting = True
+
+    def save_chunk_to_restore(self, message):
+        original_message = message
+        check_message = message.split(CRLF+CRLF)[0]
+        if (check_message in restored):
+            restored[check_message] = True
+            message = message.split(" ")
+            file_id = message[2]
+            splited = original_message.split(CRLF+CRLF)
+            chunk_no = splited[0].split(" ")[3]
+            body = splited[1]
+            chunk = open(self.temp_dir+file_id+"_"+chunk_no+".chunk", "wb")
+            chunk.write(body)
+            chunk.close()
+
+    def get_and_send_chunk(self, message):
         message_list=message.split(" ")
         file_id=message_list[2]
         chunk_no=message_list[3]
-        if (self.get_chunk(file_id, chunk_no)):
-            chunk = open(self.backup_dir+file_id+"_"+chunk_no+".chunk")
+        full_path = self.backup_dir+file_id+"_"+chunk_no+".chunk"
+        if (os.path.exists(full_path)):
+            chunk = open(full_path, "rb")
             chunk_content = chunk.read()
             chunk.close()
             message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
-            restored[message] = False
             delay=random.randint(0,400)/1000.0
             time.sleep(delay)
-            if (restored[message] == False):
-                self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
-        
-    
-    def get_chunk(self, file_id, chunk_no):
-        list_dir = os.listdir(self.backup_dir)
-        for file_name in list_dir:
-            match = re.search(file_id+"_"+chunk_no+".chunk",file_name)
-            if (match):
-                return True
-        return False 
-        
+            self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
+
     def send_chunks(self, path,replication_degree):
         f = File(path)
         data = Data(self.db_path)
