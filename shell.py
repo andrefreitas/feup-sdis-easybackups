@@ -24,7 +24,20 @@ class Shell:
     def restore_file(self,full_path):
         directory=self.assure_full_path(full_path)
         self.send_message("restore "+directory+full_path+"\n")
-        print self.receive_message()
+        answer = self.receive_message().split(" ")
+        if (answer[1]):
+            i=0
+            print "\nFound " + answer[1] + " modifications. Please choose one of the following: \n" 
+            for modification_date in answer[2:]:
+                i+=1
+                print str(i)+ " - " + modification_date
+            while True:
+                option = int(raw_input("\n> "))
+                if (option >= 1 and option <= int(answer[1])):
+                    self.send_message("restoremodification " + directory + full_path + " " +str(option) )
+                    break
+        else:
+            print "No modifications found."
         
     def assure_full_path(self,full_path):
         file_extension_pattern="^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$"

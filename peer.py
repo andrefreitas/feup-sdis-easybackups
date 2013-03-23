@@ -145,6 +145,9 @@ class Peer:
                 modification_date=modification_date[:10]+"T"+modification_date[11:19]
                 message+= " " + modification_date
             self.shell.sendto(message,addr)
+        elif(operation=="restoremodification"):
+            print message
+    
              
             
     
