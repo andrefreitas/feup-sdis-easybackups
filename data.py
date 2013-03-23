@@ -50,7 +50,7 @@ class Data:
     
     def get_file_modifications(self,file_name):
         file_id=self.get_file_id(file_name)
-        if(not file_id): return False
+        if(not file_id): return []
         return self.query("SELECT * FROM modifications WHERE file_id="+str(file_id))
         
     def get_modification_chunks(self,modification_sha256):

@@ -64,9 +64,12 @@ class Peer:
     
     def listen_shell(self):    
         while True:
-            message,addr = self.shell.recvfrom(MAX_MESSAGE_SIZE) 
-            self.handle_shell_request(message,addr)
+            message,addr = self.shell.recvfrom(MAX_MESSAGE_SIZE)
+            message=message.strip(' \t\n\r')
             print_message("Shell received \"" + message+"\"")
+            self.handle_shell_request(message,addr)
+            
+            
             
     def listen(self,sock,channel):
         while True:
@@ -125,6 +128,7 @@ class Peer:
     def handle_shell_request(self, message,addr):
         args=message.split(" ")
         operation=args[0]
+        data = Data(self.db_path)
         if(operation=="backup"):
             file_path=args[1]
             replication_degree=args[2]
@@ -132,6 +136,17 @@ class Peer:
                 self.shell.sendto("ok\n", addr)
             else:
                 self.shell.sendto("fail\n", addr)
+        elif(operation=="restore"):
+            file_path=args[1]
+            modifications=data.get_file_modifications(file_path)
+            message="found "+ str(len(modifications))
+            for modification in modifications:
+                modification_date=modification[2]
+                modification_date=modification_date[:10]+"T"+modification_date[11:19]
+                message+= " " + modification_date
+            self.shell.sendto(message,addr)
+             
+            
     
     def handle_request(self, message):
         operation=message.split(" ")[0].strip(' \t\n\r')

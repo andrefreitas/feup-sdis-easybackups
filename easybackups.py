@@ -18,6 +18,9 @@ while(True):
         if (len(command)==3):
             replication_degree=int(command[2])
         shell.backup_file(file_name, replication_degree)
+    elif (operation=="restore"):
+        file_name=command[1]
+        shell.restore_file(file_name)
         
     elif(operation=="exit"):
         break
