@@ -64,7 +64,7 @@ class File:
 	Restore the file from the chunks by giving the chunk's directory and the directory to restore the file.
 	If the destination directory is not given, will restore in the program cwd.
 	"""
-	def restore_file(self, chunks_directory, file_id, destination_directory=""):
+	def restore_file(self, chunks_directory, destination_directory=""):
 		chunks_directory=fix_directory_path(chunks_directory)
 		destination_directory=fix_directory_path(destination_directory)
 		
@@ -72,7 +72,7 @@ class File:
 			os.remove(destination_directory+self._name)
 			
 		restored_file=open(destination_directory+self._name, "ab")
-		chunks = self.fetch_chunks_restore(chunks_directory, file_id)
+		chunks = self.fetch_chunks_restore(chunks_directory, self._file_id)
 		
 		# Write chunks to file
 		for i in range(len(chunks)):

@@ -18,6 +18,7 @@ from data import Data
 
 BACKUP_DIR="backup"
 TEMP_DIR="temp"
+RESTORE_DIR="restore"
 SHELL_PORT=8383
 VERSION="1.0"
 CRLF="\n\r"
@@ -60,6 +61,10 @@ class Peer:
         if(not os.path.exists(self.temp_dir)):
             os.makedirs(self.temp_dir)
             
+        self.restore_dir=self.home_dir+"/"+RESTORE_DIR+"/"
+        if(not os.path.exists(self.restore_dir)):
+            os.makedirs(self.restore_dir)
+               
         if(not os.path.exists(self.home_dir+"/data.db")):
             shutil.copy2("data.db", self.home_dir)
     
@@ -69,9 +74,7 @@ class Peer:
             message=message.strip(' \t\n\r')
             print_message("Shell received \"" + message+"\"")
             self.handle_shell_request(message,addr)
-            
-            
-            
+
     def listen(self,sock,channel):
         while True:
             global subscriptions
@@ -181,7 +184,7 @@ class Peer:
     def get_file(self, sha256, file_name):
         f = File(file_name)
         f.generate_file_id()
-        f.restore_file(self.temp_dir, sha256, self.temp_dir)
+        f.restore_file(self.restore_dir, self.restore_dir)
         
     def restore_file_modification(self, file_id, chunks):
         total_chunks=0
@@ -233,7 +236,7 @@ class Peer:
             splited = original_message.split(CRLF+CRLF)
             chunk_no = splited[0].split(" ")[3]
             body = splited[1]
-            chunk = open(self.temp_dir+file_id+"_"+chunk_no+".chunk", "wb")
+            chunk = open(self.restore_dir+file_id+"_"+chunk_no+".chunk", "wb")
             chunk.write(body)
             chunk.close()
 
