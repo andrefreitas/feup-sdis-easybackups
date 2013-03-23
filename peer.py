@@ -64,8 +64,9 @@ class Peer:
     
     def listen_shell(self):    
         while True:
-            message = self.shell.recvfrom(MAX_MESSAGE_SIZE)[0]  
-            self.handle_shell_request(message)
+            message,addr = self.shell.recvfrom(MAX_MESSAGE_SIZE) 
+            self.handle_shell_request(message,addr)
+            print_message("Shell received \"" + message+"\"")
             
     def listen(self,sock,channel):
         while True:
@@ -121,18 +122,16 @@ class Peer:
         s.bind(("127.0.0.1", port))
         return  s
     
-    def handle_shell_request(self, message):
+    def handle_shell_request(self, message,addr):
         args=message.split(" ")
         operation=args[0]
         if(operation=="backup"):
             file_path=args[1]
             replication_degree=args[2]
             if(self.send_chunks(file_path,int(replication_degree))):
-                self.shell.sendto("ok\n", ("127.0.0.1", self.shell_port))
-                print "Ok"
+                self.shell.sendto("ok\n", addr)
             else:
-                self.shell.sendto("fail\n", ("127.0.0.1", self.shell_port))
-                print "Fail"
+                self.shell.sendto("fail\n", addr)
     
     def handle_request(self, message):
         operation=message.split(" ")[0].strip(' \t\n\r')

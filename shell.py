@@ -1,6 +1,7 @@
 import socket
 import re
 import os
+from peer import *
 
 class Shell:
     def __init__(self, port=8383):
@@ -11,8 +12,8 @@ class Shell:
     def send_message(self, message):
         self.socket.sendto(message, (self.hostname, self.port))
         
-    def receive_message(self, message):
-        answer= self.socket.recv_into(10240)
+    def receive_message(self):
+        answer, addr = self.socket.recvfrom(1024)
         return answer
     
     def backup_file(self, full_path, replication_degree=2):
@@ -21,6 +22,7 @@ class Shell:
         if (re.match(file_extension_pattern, full_path)):
             directory = os.getcwd()+"/"
         self.send_message("backup "+directory+full_path+" "+str(replication_degree)+"\n")
+        print self.receive_message()
     
 
     
