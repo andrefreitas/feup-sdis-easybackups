@@ -189,7 +189,8 @@ class Peer:
     def get_file(self, sha256, file_name):
         f = File(file_name)
         f.generate_file_id()
-        f.restore_file(self.restore_dir, self.restore_dir)
+        f.restore_file(self.temp_dir, self.restore_dir)
+        self.remove_chunks_from_directory(f.get_file_id(), self.temp_dir)
         
     def request_file_deletion(self, file_name):
         data = Data(self.db_path)
@@ -254,7 +255,7 @@ class Peer:
             splited = original_message.split(CRLF+CRLF)
             chunk_no = splited[0].split(" ")[3]
             body = splited[1]
-            chunk = open(self.restore_dir+file_id+"_"+chunk_no+".chunk", "wb")
+            chunk = open(self.temp_dir+file_id+"_"+chunk_no+".chunk", "wb")
             chunk.write(body)
             chunk.close()
 
