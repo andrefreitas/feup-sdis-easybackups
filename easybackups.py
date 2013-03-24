@@ -21,8 +21,9 @@ while(True):
     elif (operation=="restore"):
         file_name=command[1]
         shell.restore_file(file_name)
-        
-        
+    elif (operation=="delete"):
+        file_name=command[1]
+        shell.delete_file(file_name)
     elif(operation=="exit"):
         break
         

@@ -155,6 +155,9 @@ class Peer:
             chunks = int(modification[3])
             if (self.restore_file_modification(sha256, chunks)):
                 self.get_file(sha256, file_name)
+        elif(operation=="delete"):
+            file_name=args[1]
+            self.request_file_deletion(file_name)
     
     def handle_request(self, message):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -165,6 +168,8 @@ class Peer:
             self.get_and_send_chunk(message)
         elif(operation == "CHUNK"):
             self.save_chunk_to_restore(message)
+        elif(operation=="DELETE"):
+            self.delete_chunks(message)
        
     def backup_chunk(self, message):
         message_list=message.split(" ")
@@ -185,6 +190,19 @@ class Peer:
         f = File(file_name)
         f.generate_file_id()
         f.restore_file(self.restore_dir, self.restore_dir)
+        
+    def request_file_deletion(self, file_name):
+        data = Data(self.db_path)
+        modifications=data.get_file_modifications(file_name)
+        for modification in modifications:
+            file_id=modification[1]
+            message="DELETE "+str(file_id)+CRLF+CRLF
+            self.mc.sendto(message, (self.mc_address, self.mc_port))
+            
+    def delete_chunks(self,message):
+        file_id=message.split(" ")[1].strip(CRLF+CRLF)
+        self.remove_chunks_from_directory(file_id, self.backup_dir) 
+        
         
     def restore_file_modification(self, file_id, chunks):
         total_chunks=0
@@ -283,7 +301,7 @@ class Peer:
                 timeout*=2
                 attempts+=1
             if(acks): acks_chunks+=1
-        self.clean_temp(f.get_name())
+        self.remove_chunks_from_directory(f.get_name(),self.temp_dir)
         return (acks_chunks>=chunks_number)
                 
     
@@ -310,11 +328,11 @@ class Peer:
         global waiting
         waiting = True
         
-    def clean_temp(self, file_id):
+    def remove_chunks_from_directory(self,file_id,directory):
         file_id = file_id.split(".")[0]
-        list_dir = os.listdir(self.temp_dir)
+        list_dir = os.listdir(directory)
         for file_name in list_dir:
             match = re.search(file_id, file_name)
             if (match):
-                os.remove(self.temp_dir+file_name)      
+                os.remove(directory+file_name)      
     
