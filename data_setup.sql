@@ -25,6 +25,19 @@ CREATE TABLE chunks(
 	modification_id INTEGER NOT NULL REFERENCES modifications(id)
 );
 
+DROP TABLE IF EXISTS hosts;
+CREATE TABLE hosts(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	host VARCHAR(20) NOT NULL
+);
+
+DROP TABLE IF EXISTS chunks_hosts;
+CREATE TABLE chunks_hosts(
+	chunk_id INTEGER REFERENCES chunks(id),
+	host_id INTEGER REFERENCES hosts(id),
+	PRIMARY KEY (chunk_id,host_id)
+);
+
 DROP TRIGGER IF EXISTS drop_modifications;
 CREATE TRIGGER drop_modifications
 AFTER DELETE ON files

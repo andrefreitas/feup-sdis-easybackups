@@ -86,7 +86,7 @@ class Peer:
                 subscriptions[message] = int(value)+1
             operation=message.split(" ")[0].strip(' \t\n\r')
             print_message(channel+" received \"" + operation + "\" from " + str(addr) )
-            self.handle_request(message)
+            self.handle_request(message,addr)
 
     
     def listen_all(self):
@@ -161,7 +161,7 @@ class Peer:
             file_name=args[1]
             self.request_file_deletion(file_name)
     
-    def handle_request(self, message):
+    def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
         message=message.strip(' \t\n\r')
         if (operation == "PUTCHUNK"):
@@ -173,16 +173,17 @@ class Peer:
         elif(operation=="DELETE"):
             self.delete_chunks(message)
         elif(operation=="STORED"):
-            self.increment_chunk_replication_degree(message) 
+            self.increment_chunk_replication_degree(message,addr)
             
-    def increment_chunk_replication_degree(self,message):
+    def increment_chunk_replication_degree(self,message,addr):
+        ip=addr[0]
         data = Data(self.db_path)
         file_id=message.split(" ")[2]
         chunk_number=message.split(" ")[3]
-        print "increment_chunk_replication_degree: "
         print "file_id: *"+file_id+"*"
         print "chunk_number: *"+chunk_number+"*"
-        data.increment_replication_degree(file_id, chunk_number, 1)
+        if(data.increment_replication_degree(file_id, chunk_number,ip)):
+            print "replication degree: " + str(data.get_chunk_replication_degree(file_id, chunk_number))
               
     def create_chunk_data(self,message):
         data = Data(self.db_path)
@@ -195,7 +196,7 @@ class Peer:
         print "minimum_replication_degree: *"+minimum_replication_degree+"*"
         data.add_only_modification(file_id)
         data.add_chunk(file_id, chunk_number, minimum_replication_degree)
-        data.increment_replication_degree(file_id, chunk_number, 1)
+        data.increment_replication_degree(file_id, chunk_number,"localhost")
     
     def backup_chunk(self, message):
         message_list=message.split(" ")
@@ -322,7 +323,6 @@ class Peer:
             attempts=0
             timeout=TIMEOUT
             while(not acks and attempts<MAX_ATTEMPTS):
-                data.reset_replication_degree(file_id, chunk_no) 
                 self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
                 data.add_chunk(file_id, chunk_no, replication_degree)
                 if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
