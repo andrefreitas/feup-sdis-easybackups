@@ -195,6 +195,7 @@ class Peer:
         print "minimum_replication_degree: *"+minimum_replication_degree+"*"
         data.add_only_modification(file_id)
         data.add_chunk(file_id, chunk_number, minimum_replication_degree)
+        data.increment_replication_degree(file_id, chunk_number, 1)
     
     def backup_chunk(self, message):
         message_list=message.split(" ")
