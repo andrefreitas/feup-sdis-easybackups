@@ -56,8 +56,13 @@ class Data:
     
     def increment_replication_degree(self,sha256,chunk_number,value): 
         modification_id=self.get_modification_id(sha256)
+        print "id:" +str(modification_id)
         if(modification_id):
-            old_replication_degree=self.query("SELECT replication_degree FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))[0][0]
+            old_replication_degree=self.query("SELECT replication_degree FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
+            if(len(old_replication_degree)==0):
+                return False
+            old_replication_degree=old_replication_degree[0][0]
+            print "old: " +  str(old_replication_degree)
             new_replication_degree=old_replication_degree+value
             sql="UPDATE chunks"
             sql+=" SET replication_degree="+str(new_replication_degree)
@@ -104,3 +109,4 @@ class Data:
 #conn=sqlite3.connect("c:\git\easybackup\data.db")
 #c = conn.cursor()
 #c=Data("c:\git\easybackup\data.db")
+#c=Data("/home/andre/easybackup/data.db")

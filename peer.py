@@ -26,10 +26,12 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
+LOOPBACK=0
 waiting=False
 restore_waiting=False
 subscriptions={}
 restored={}
+
 
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
@@ -118,7 +120,7 @@ class Peer:
         mreq = struct.pack("4sl", socket.inet_aton(multicast_address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, TTL)
-        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
+        sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, LOOPBACK)
         return sock
     
     def create_socket(self,port):
@@ -320,9 +322,9 @@ class Peer:
             timeout=TIMEOUT
             while(not acks and attempts<MAX_ATTEMPTS):
                 self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+                data.add_chunk(file_id, chunk_no, replication_degree)
                 if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
                     acks=True
-                    data.add_chunk(file_id, chunk_no, replication_degree)
                 timeout*=2
                 attempts+=1
             if(acks): acks_chunks+=1
