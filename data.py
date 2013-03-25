@@ -50,6 +50,14 @@ class Data:
             self.query(sql)
         return True
     
+    def delete_chunk_removed(self, chunk_number, sha256):
+        chunk_id = self.get_chunk_id(chunk_number, sha256)
+        if(chunk_id):
+            sql="DELETE FROM chunks WHERE id="+str(chunk_id)
+            self.query(sql)
+            return True
+        return False
+    
     def chunk_exist(self, number, modification_id):
         sql = "SELECT * from chunks where number = " + str(number) + " and modification_id = " + str(modification_id)
         return len(self.query(sql))>0
@@ -141,5 +149,5 @@ class Data:
 #c=sqlite3.connect(path.decode("latin1"))
 #conn=sqlite3.connect("c:\git\easybackup\data.db")
 #c = conn.cursor()
-#c=Data("c:\git\easybackup\data.db")
+c=Data("C:\Users\Ana Gomes\Documents\git\easybackup\data.db")
 #c=Data("/home/andre/git/easybackup/data.db")
