@@ -149,5 +149,5 @@ class Data:
 #c=sqlite3.connect(path.decode("latin1"))
 #conn=sqlite3.connect("c:\git\easybackup\data.db")
 #c = conn.cursor()
-c=Data("C:\Users\Ana Gomes\Documents\git\easybackup\data.db")
+#c=Data("C:\Users\Ana Gomes\Documents\git\easybackup\data.db")
 #c=Data("/home/andre/git/easybackup/data.db")
