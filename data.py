@@ -54,6 +54,13 @@ class Data:
         sql = "SELECT * from chunks where number = " + str(number) + " and modification_id = " + str(modification_id)
         return len(self.query(sql))>0
     
+    def chunk_sha256_exist(self,number,sha256):
+        modification_id=self.get_modification_id(sha256)
+        if(modification_id):
+            return self.chunk_exist(number,modification_id)
+        else:
+            return False
+    
     def get_chunk_id(self,number, sha256):
         modification_id=self.get_modification_id(sha256)
         if(modification_id):
