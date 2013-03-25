@@ -1,21 +1,33 @@
-import sys
+from data import Data
+import peer
 import time
-import logging
 from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
+from watchdog.events import FileSystemEventHandler
+import re
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    path = "c:"
-    event_handler = LoggingEventHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path, recursive=False)
-    observer.start()
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+class ChunksMonitor(FileSystemEventHandler):
+    
+    def __init__(self,backup_directory,socket,address,port,db_path):
+        self.backup_directory=backup_directory
+        self.db=Data(db_path)
+        self.socket=socket
+        self.address=address
+        self.port=port
+        
+    def on_any_event(self,event):
+        event=re.split("/|\\\\",str(event))
+        chunk=event[-1].strip(">")
+        peer.print_message("The chunk "+ chunk +" has been deleted/moved")
+        self.socket.sendto("REMOVED",(self.address,self.port))
+        
+    def start(self):
+        event_handler = self
+        observer = Observer()
+        observer.schedule(event_handler, self.backup_directory, recursive=False)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()

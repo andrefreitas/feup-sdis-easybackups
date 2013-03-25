@@ -14,6 +14,7 @@ from file import File
 from threading import Thread,Timer
 from datetime import datetime
 from data import Data
+from chunks_monitor import ChunksMonitor
 
 
 BACKUP_DIR="backup"
@@ -69,6 +70,7 @@ class Peer:
                
         if(not os.path.exists(self.home_dir+"/data.db")):
             shutil.copy2("data.db", self.home_dir)
+        
     
     def listen_shell(self):    
         while True:
@@ -99,6 +101,7 @@ class Peer:
         mc = Thread(target=self.listen, args=(self.mc,"MC"))
         mdb = Thread(target=self.listen, args=(self.mdb,"MDB"))
         mdr = Thread(target=self.listen, args=(self.mdr,"MDR"))
+        monitor_chunks=Thread(target=self.monitor_chunks, args=())
         shell.start()
         print_message("Shell listening at UDP port " + str(self.shell_port))
         mdb.start()  
@@ -107,10 +110,18 @@ class Peer:
         print_message("MC listening at Multicast group "+ self.mc_address + " and port " + str(self.mc_port))
         mdr.start()
         print_message("MDR listening at Multicast group "+ self.mdr_address + " and port " + str(self.mdr_port))
+        monitor_chunks.start()
         shell.join()
         mdb.join()
         mc.join()
         mdr.join()
+        monitor_chunks.join()
+        
+    
+    def monitor_chunks(self):
+        monitor=ChunksMonitor(self.backup_dir, self.mc, self.mc_address,self.mc_port,self.db_path)
+        monitor.start()
+        
 
     
     def create_multicast_socket(self,multicast_address,multicast_port):
