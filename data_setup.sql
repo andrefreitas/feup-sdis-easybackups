@@ -11,16 +11,17 @@ DROP TABLE IF EXISTS modifications;
 CREATE TABLE modifications(
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	sha256 VARCHAR(300) NOT NULL,
-	date_modified DATE NOT NULL,
-	chunks INTEGER NOT NULL,
-	file_id INTEGER NOT NULL REFERENCES files(id)
+	date_modified DATE,
+	chunks INTEGER,
+	file_id INTEGER REFERENCES files(id)
 );
 
 DROP TABLE IF EXISTS chunks;
 CREATE TABLE chunks(
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	number INTEGER NOT NULL,
-	replication_degree INTEGER NOT NULL,
+	replication_degree INTEGER NOT NULL DEFAULT 0,
+	minimum_replication_degree INTEGER NOT NULL,
 	modification_id INTEGER NOT NULL REFERENCES modifications(id)
 );
 

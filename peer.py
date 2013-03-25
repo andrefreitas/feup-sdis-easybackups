@@ -170,7 +170,30 @@ class Peer:
             self.save_chunk_to_restore(message)
         elif(operation=="DELETE"):
             self.delete_chunks(message)
-       
+        elif(operation=="STORED"):
+            self.increment_chunk_replication_degree(message) 
+            
+    def increment_chunk_replication_degree(self,message):
+        data = Data(self.db_path)
+        file_id=message.split(" ")[2]
+        chunk_number=message.split(" ")[3]
+        print "increment_chunk_replication_degree: "
+        print "file_id: *"+file_id+"*"
+        print "chunk_number: *"+chunk_number+"*"
+        data.increment_replication_degree(file_id, chunk_number, 1)
+              
+    def create_chunk_data(self,message):
+        data = Data(self.db_path)
+        file_id=message.split(" ")[2]
+        chunk_number=message.split(" ")[3]
+        minimum_replication_degree=message.split(" ")[4].split(CRLF+CRLF)[0]
+        print "create_chunk_data: "
+        print "file_id: *"+file_id+"*"
+        print "chunk_number: *"+chunk_number+"*"
+        print "minimum_replication_degree: *"+minimum_replication_degree+"*"
+        data.add_only_modification(file_id)
+        data.add_chunk(file_id, chunk_number, minimum_replication_degree)
+        
     def backup_chunk(self, message):
         message_list=message.split(" ")
         file_id=message_list[2]
@@ -179,6 +202,7 @@ class Peer:
         chunk_file = open(self.backup_dir+file_id+"_"+chunk_no+".chunk", "wb")
         chunk_file.write(chunk)
         chunk_file.close()
+        self.create_chunk_data(message)
         delay=random.randint(0,400)
         d = delay/1000.0
         time.sleep(d)
