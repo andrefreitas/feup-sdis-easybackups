@@ -72,6 +72,14 @@ class Data:
         else:
             return False  
         
+    def reset_replication_degree(self,sha256,chunk_number):
+        modification_id=self.get_modification_id(sha256)
+        if(modification_id and self.chunk_exist(chunk_number,modification_id)):
+            sql="UPDATE chunks"
+            sql+=" SET replication_degree=0"
+            sql+=" WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number)
+            self.query(sql)
+        
     def get_chunk_replication_degree(self,sha256,chunk_number):
         modification_id=self.get_modification_id(sha256)
         result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))

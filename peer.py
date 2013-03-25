@@ -321,6 +321,7 @@ class Peer:
             attempts=0
             timeout=TIMEOUT
             while(not acks and attempts<MAX_ATTEMPTS):
+                data.reset_replication_degree(file_id, chunk_no) 
                 self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
                 data.add_chunk(file_id, chunk_no, replication_degree)
                 if(self.check_replication_degree(file_id,chunk_no,replication_degree,timeout)):
