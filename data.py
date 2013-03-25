@@ -135,4 +135,4 @@ class Data:
 #conn=sqlite3.connect("c:\git\easybackup\data.db")
 #c = conn.cursor()
 #c=Data("c:\git\easybackup\data.db")
-c=Data("/home/andre/git/easybackup/data.db")
+#c=Data("/home/andre/git/easybackup/data.db")
