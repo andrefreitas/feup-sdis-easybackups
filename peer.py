@@ -29,7 +29,7 @@ MAX_ATTEMPTS=5
 TIMEOUT=0.5
 LOOPBACK=0
 waiting=False
-restore_waiting=False
+stop_restore_waiting=False
 subscriptions={}
 restored={}
 
@@ -290,11 +290,11 @@ class Peer:
         return total_chunks == chunks
 
     def check_received_chunk(self, message_expected, timeout):
-        global restore_waiting
+        global stop_restore_waiting
         chunk_received=False
         timeout_check = Timer(timeout, self.restore_waiting)
         timeout_check.start()
-        while (not chunk_received and not restore_waiting):
+        while (not chunk_received and not stop_restore_waiting):
             chunk_received = restored[message_expected]
         
         timeout_check.cancel()
@@ -306,8 +306,8 @@ class Peer:
         return chunk_received      
         
     def restore_waiting(self):
-        global restore_waiting
-        restore_waiting = True
+        global stop_restore_waiting
+        stop_restore_waiting = True
 
     def save_chunk_to_restore(self, message):
         original_message = message
@@ -345,7 +345,16 @@ class Peer:
             chunk.close()
             message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
             delay=random.randint(0,400)/1000.0
-            time.sleep(delay)
+            timeout_check = Timer(delay, self.restore_waiting())
+            timeout_check.start()
+            received_chunk_first = False
+            while (not received_chunk_first and not stop_restore_waiting):
+                received_chunk_first = restored[message]
+            
+            timeout_check.cancel()
+            if received_chunk_first:
+                return
+            #time.sleep(delay)
             self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
 
     def send_chunks(self, path,replication_degree):
