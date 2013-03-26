@@ -166,8 +166,9 @@ class Peer:
             modification = data.get_file_modifications(file_name)[option-1]
             sha256 = modification[1]
             chunks = int(modification[3])
-            if (self.restore_file_modification(sha256, chunks)):
-                self.get_file(sha256, file_name)
+            self.restore_file_modification(sha256, chunks)
+            self.get_file(sha256, file_name,chunks)
+            
         elif(operation=="delete"):
             file_name=args[1]
             self.request_file_deletion(file_name)
@@ -225,11 +226,11 @@ class Peer:
         self.mc.sendto(message, (self.mc_address, self.mc_port))
 
         
-    def get_file(self, sha256, file_name):
-        f = File(file_name)
-        f.generate_file_id()
-        f.restore_file(self.temp_dir, self.restore_dir)
+    def get_file(self, sha256, file_name,chunks):
+        f = File(file_name,sha256)
+        result=f.restore_file(self.temp_dir, self.restore_dir,chunks)
         self.remove_chunks_from_directory(f.get_file_id(), self.temp_dir)
+        return result
         
     def request_file_deletion(self, file_name):
         data = Data(self.db_path)

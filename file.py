@@ -14,9 +14,10 @@ def fix_directory_path(directory):
 	return directory
 
 class File:
-	def __init__(self, full_path):
+	def __init__(self, full_path,file_id=None):
 		self.set_full_path(full_path)
 		self.parse_name()
+		self._file_id=file_id
 
 	def parse_name(self):
 		file_extension_pattern="[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$"
@@ -64,7 +65,7 @@ class File:
 	Restore the file from the chunks by giving the chunk's directory and the directory to restore the file.
 	If the destination directory is not given, will restore in the program cwd.
 	"""
-	def restore_file(self, chunks_directory, destination_directory=""):
+	def restore_file(self, chunks_directory, destination_directory,expected_chunks):
 		chunks_directory=fix_directory_path(chunks_directory)
 		destination_directory=fix_directory_path(destination_directory)
 		
@@ -73,7 +74,9 @@ class File:
 			
 		restored_file=open(destination_directory+self._name, "ab")
 		chunks = self.fetch_chunks_restore(chunks_directory, self._file_id)
-		
+		if(not (len(chunks)==expected_chunks)):
+			print "Restored failed"
+			return False
 		# Write chunks to file
 		for i in range(len(chunks)):
 			chunk=open(chunks_directory+chunks[i], "rb")
