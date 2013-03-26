@@ -100,6 +100,16 @@ class Data:
             return result[0][0]
         else:
             return False
+        
+    def remove_chunk_replication_degree(self,sha256,chunk_number,host):
+        modification_id=self.get_modification_id(sha256)
+        chunk_id=self.get_chunk_id(chunk_number,sha256)
+        host_id=self.get_host_id(host)
+        if(modification_id and chunk_id and host_id):
+            self.query("DELETE FROM chunks_hosts WHERE chunk_id="+str(chunk_id)+" AND host_id="+str(host_id))
+            return True
+        return False
+        
     
     def get_chunk_minimum_replication_degree(self,sha256,chunk_number):
         modification_id=self.get_modification_id(sha256)

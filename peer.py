@@ -186,6 +186,28 @@ class Peer:
             self.delete_chunks(message)
         elif(operation=="STORED"):
             self.increment_chunk_replication_degree(message,addr)
+        elif(operation=="REMOVED"):
+            self.update_chunk_replication_degree(message,addr)
+            
+    def update_chunk_replication_degree(self,message,addr):
+        file_id=message.split(" ")[2]
+        chunk_number=message.split(" ")[3].strip(CRLF+CRLF)
+        host=addr[0]
+        data = Data(self.db_path)
+        print "UPDATE_CHUNK_REPLICATION_DEGREE"
+        print "File_id: *" + file_id+"*"
+        print "Chunk Number: *"+chunk_number+"*"
+        print "Host: *"+host+"*"
+        if(data.get_chunk_id(chunk_number, file_id)):
+            print "O chunk existe, vou ver se esta bom"
+            data.remove_chunk_replication_degree(file_id, chunk_number, host)
+            # check replication degree
+            replication_degree=data.get_chunk_replication_degree(file_id, chunk_number)
+            minimum_replication_degree=data.get_chunk_minimum_replication_degree(file_id , chunk_number)
+            if(replication_degree<minimum_replication_degree):
+                print "vou ter que enviar entao"
+                self.put_chunk(file_id,chunk_number,replication_degree)
+            
             
     def increment_chunk_replication_degree(self,message,addr):
         ip=addr[0]
@@ -298,6 +320,17 @@ class Peer:
             chunk = open(self.temp_dir+file_id+"_"+chunk_no+".chunk", "wb")
             chunk.write(body)
             chunk.close()
+            
+    def put_chunk(self,file_id,chunk_number,replication_degree):
+        full_path = self.backup_dir+file_id+"_"+chunk_number+".chunk"
+        if (os.path.exists(full_path)):
+            chunk = open(full_path, "rb")
+            chunk_content = chunk.read()
+            chunk.close()
+            message="PUTCHUNK " + VERSION + " " + str(file_id) + " " + str(chunk_number)+" "+str(replication_degree) + CRLF + CRLF + chunk_content
+            delay=random.randint(0,400)/1000.0
+            time.sleep(delay)
+            self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
 
     def get_and_send_chunk(self, message):
         message_list=message.split(" ")
