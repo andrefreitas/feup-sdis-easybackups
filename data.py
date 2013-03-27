@@ -81,6 +81,11 @@ class Data:
         res=self.query("SELECT * FROM chunks_hosts WHERE chunk_id="+str(chunk_id)+" AND host_id="+str(host_id))  
         return len(res)>0
     
+    def chunk_owner(self,sha256):
+        modification_id=self.get_modification_id(sha256)
+        return len(self.query("SELECT * FROM files, modifications WHERE files.id=modifications.file_id and modifications.id="+str(modification_id))) > 0
+        
+        
     def increment_replication_degree(self,sha256,chunk_number,host): 
         modification_id=self.get_modification_id(sha256)
         chunk_id=self.get_chunk_id(chunk_number,sha256)

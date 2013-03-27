@@ -188,16 +188,19 @@ class Peer:
         operation=message.split(" ")[0].strip(' \t\n\r')
         message=message.strip(' \t\n\r')
         if (operation == "PUTCHUNK"):
+            data = Data(self.db_path)
             file_id=message.split(" ")[2]
             chunk_number=message.split(" ")[3]
             now=datetime.now()
             can_store=True
+            if(data.chunk_owner(file_id)):
+                can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False     
             if(can_store):
                 self.backup_chunk(message)
             else: 
-                print "Nao pode restaurar porque foi eliminado ha pouco tempo"
+                print_message("PUTCHUNK rejeitado")
                 
         elif(operation == "GETCHUNK"):
             self.get_and_send_chunk(message)
