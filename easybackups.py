@@ -11,6 +11,7 @@ while(True):
     if (operation == "help"):
         print "    - backup <file> (<replication degree>)"
         print "    - restore <file>"
+        print "    - delete <file>"
         print "    - exit"
     elif (operation=="backup"):
         file_name=command[1]

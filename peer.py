@@ -434,5 +434,16 @@ class Peer:
         for file_name in list_dir:
             match = re.search(file_id, file_name)
             if (match):
-                os.remove(directory+file_name)      
+                os.remove(directory+file_name)
+    
+    # Formato retornado em Bytes, ex: 74567L          
+    def check_directory_space(self, directory):
+        TotalSize = 0
+        for item in os.walk(directory):
+            for file_name in item[2]:
+                try:
+                    TotalSize = TotalSize + os.path.getsize(os.path.join(item[0], file_name))
+                except:
+                    print("error with file:  " + os.path.join(item[0], file_name))
+        return TotalSize    
     
