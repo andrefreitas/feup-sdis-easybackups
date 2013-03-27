@@ -75,7 +75,7 @@ class Peer:
             chunk_number = chunks[el][1]
             chunks_hosts = data.get_hosts_associated_chunk(chunk_id)
             """ TODO: ir buscar o host correto """
-            host_id = chunks_hosts[0][1]
+            host_id = chunks_hosts[1][1]
             sha256 = data.get_chunk_sha256(modification_id)
             host = data.get_host(host_id)
             data.remove_chunk_replication_degree(sha256, chunk_number, host)
