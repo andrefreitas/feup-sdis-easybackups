@@ -193,6 +193,7 @@ class Peer:
         elif(operation=="DELETE"):
             self.can_send_removed=False
             self.delete_chunks(message)
+            time.sleep(1)
             self.can_send_removed=True
         elif(operation=="STORED"):
             self.increment_chunk_replication_degree(message,addr)
