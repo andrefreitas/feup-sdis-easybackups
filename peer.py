@@ -204,20 +204,12 @@ class Peer:
         chunk_number=message.split(" ")[3].strip(CRLF+CRLF)
         host=addr[0]
         data = Data(self.db_path)
-        print "UPDATE_CHUNK_REPLICATION_DEGREE"
-        print "File_id: *" + file_id+"*"
-        print "Chunk Number: *"+chunk_number+"*"
-        print "Host: *"+host+"*"
         if(data.get_chunk_id(chunk_number, file_id)):
-            print "O chunk existe, vou ver se esta bom"
             data.remove_chunk_replication_degree(file_id, chunk_number, host)
             # check replication degree
             replication_degree=data.get_chunk_replication_degree(file_id, chunk_number)
             minimum_replication_degree=data.get_chunk_minimum_replication_degree(file_id , chunk_number)
-            print "O replication degree e: "+ str(replication_degree)
-            print "O minimo e :" + str(minimum_replication_degree)
             if(replication_degree<minimum_replication_degree):
-                print "vou ter que enviar entao"
                 self.put_chunk(file_id,chunk_number,replication_degree)
             
             
@@ -236,10 +228,6 @@ class Peer:
         file_id=message.split(" ")[2]
         chunk_number=message.split(" ")[3]
         minimum_replication_degree=message.split(" ")[4].split(CRLF+CRLF)[0]
-        print "create_chunk_data: "
-        print "file_id: *"+file_id+"*"
-        print "chunk_number: *"+chunk_number+"*"
-        print "minimum_replication_degree: *"+minimum_replication_degree+"*"
         data.add_only_modification(file_id)
         data.add_chunk(file_id, chunk_number, minimum_replication_degree)
         data.increment_replication_degree(file_id, chunk_number,"localhost")
