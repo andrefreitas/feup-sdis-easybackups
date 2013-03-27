@@ -25,7 +25,6 @@ SHELL_PORT=8383
 VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
-BACKUP_SIZE = 5368709120
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
@@ -39,7 +38,7 @@ def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
 
 class Peer:
-    def __init__(self, home_dir,mc_address,mc_port,mdb_address,mdb_port,mdr_address,mdr_port,shell_port=SHELL_PORT):
+    def __init__(self, home_dir,mc_address,mc_port,mdb_address,mdb_port,mdr_address,mdr_port,backup_size,shell_port=SHELL_PORT):
         self.home_dir=home_dir
         self.init_home_dir()
         self.mc=self.create_multicast_socket(mc_address, mc_port)
@@ -57,7 +56,7 @@ class Peer:
         self.db_path = self.db_path.decode("latin1")
         self.can_send_removed=True
         self.reject_putchunks={}
-        self.space_backup = BACKUP_SIZE #5GB em Bytes
+        self.backup_size = backup_size
 
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -201,7 +200,7 @@ class Peer:
                 can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False
-            if ((self.space_backup - self.check_directory_space(self.backup_dir)) <= len(body)):
+            if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
                 can_store=False    
             if(can_store):
                 self.backup_chunk(message)
@@ -443,7 +442,7 @@ class Peer:
                 os.remove(directory+file_name)
     
     # Formato retornado em Bytes, ex: 74567L          
-    def check_directory_space(self, directory):
+    def check_directory_size(self, directory):
         TotalSize = 0
         for item in os.walk(directory):
             for file_name in item[2]:
