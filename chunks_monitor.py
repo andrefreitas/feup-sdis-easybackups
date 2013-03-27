@@ -26,7 +26,7 @@ class ChunksMonitor(FileSystemEventHandler):
             file_id=chunk[0]
             chunk_number=chunk[1]
             if(data.chunk_sha256_exist(chunk_number, file_id)):
-                message="REMOVED "+peer.VERSION+" "+file_id+" "+chunk_number+peer.CRLF+peer.CRLF
+                message="REMOVED "+peer.VERSION+" "+file_id+" "+chunk_number
                 peer.print_message("The chunk "+ file_name +" has been "+action)
                 self.socket.sendto(message,("127.0.0.1",self.shell_port))
     
