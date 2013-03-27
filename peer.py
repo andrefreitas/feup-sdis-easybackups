@@ -28,7 +28,7 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-LOOPBACK=0
+LOOPBACK=1
 waiting=False
 stop_restore_waiting=False
 subscriptions={}
@@ -67,15 +67,23 @@ class Peer:
     
     def remove_chunks_higher_replication_degree(self):
         data = Data(self.db_path)
+        chunks = data.get_ordered_chunks_difference_replication_degree()
+        el = 0
         while (self.backup_size < self.check_directory_size(self.backup_dir)):
-            chunks = data.get_ordered_chunks_difference_replication_degree()
-            chunks_hosts = data.get_hosts_associated_chunk(chunks[0][0])
-            sha256 = data.get_chunk_sha256(chunks[0][4])
-            host = data.get_host(chunks_hosts[0][1])
-            data.remove_chunk_replication_degree(sha256, chunks[0][1], host)
-            os.remove(self.backup_dir+sha256+"_"+str(chunks[0][1])+".chunk")
-            message = "REMOVED " + VERSION + " " + sha256 + " " + str(chunks[0][1]) + CRLF + CRLF
+            chunk_id = chunks[el][0]
+            modification_id = chunks[el][4]
+            chunk_number = chunks[el][1]
+            chunks_hosts = data.get_hosts_associated_chunk(chunk_id)
+            """ TODO: ir buscar o host correto """
+            host_id = chunks_hosts[0][1]
+            sha256 = data.get_chunk_sha256(modification_id)
+            host = data.get_host(host_id)
+            data.remove_chunk_replication_degree(sha256, chunk_number, host)
+            file_name = self.backup_dir+str(sha256)+"_"+str(chunk_number)+".chunk"
+            os.remove(file_name)
+            message = "REMOVED " + VERSION + " " + sha256 + " " + str(chunk_number) + CRLF + CRLF
             self.mc.sendto(message, (self.mc_address, self.mc_port))
+            el +=1
             
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -215,8 +223,8 @@ class Peer:
             body = message.split(CRLF+CRLF)[1]
             print len(body)
             can_store=True
-            if(data.chunk_owner(file_id)):
-                can_store=False
+            #if(data.chunk_owner(file_id)):
+            #can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False
             if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
