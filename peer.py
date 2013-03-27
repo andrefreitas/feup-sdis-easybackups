@@ -177,8 +177,8 @@ class Peer:
             
         elif(operation=="REMOVED"):
             if(self.can_send_removed):
-                file_id=message.split[2]
-                chunk_number=message.split[3]
+                file_id=message.split(" ")[2]
+                chunk_number=message.split(" ")[3]
                 self.reject_putchunks[file_id+chunk_number]=datetime.datetime.now() + datetime.timedelta(0,60)
                 message+=CRLF+CRLF
                 self.mc.sendto(message,(self.mc_address,self.mc_port))
