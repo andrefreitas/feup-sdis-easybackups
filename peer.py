@@ -25,10 +25,11 @@ SHELL_PORT=8383
 VERSION="1.0"
 CRLF="\n\r"
 MAX_MESSAGE_SIZE=65565
+BACKUP_SIZE = 5368709120
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-LOOPBACK=0
+LOOPBACK=1
 waiting=False
 stop_restore_waiting=False
 subscriptions={}
@@ -56,6 +57,7 @@ class Peer:
         self.db_path = self.db_path.decode("latin1")
         self.can_send_removed=True
         self.reject_putchunks={}
+        self.space_backup = BACKUP_SIZE #5GB em Bytes
 
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -192,11 +194,15 @@ class Peer:
             file_id=message.split(" ")[2]
             chunk_number=message.split(" ")[3]
             now=datetime.now()
+            body = message.split(CRLF+CRLF)[1]
+            print len(body)
             can_store=True
             if(data.chunk_owner(file_id)):
                 can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
-                can_store=False     
+                can_store=False
+            if ((self.space_backup - self.check_directory_space(self.backup_dir)) <= len(body)):
+                can_store=False    
             if(can_store):
                 self.backup_chunk(message)
             else: 
@@ -445,5 +451,5 @@ class Peer:
                     TotalSize = TotalSize + os.path.getsize(os.path.join(item[0], file_name))
                 except:
                     print("error with file:  " + os.path.join(item[0], file_name))
-        return TotalSize    
+        return TotalSize 
     
