@@ -95,6 +95,9 @@ class Data:
         if(modification_id and chunk_id and host_id):
             if(not self.chunk_host_exists(chunk_id,host_id)):
                 self.query("INSERT INTO chunks_hosts(chunk_id,host_id) VALUES("+str(chunk_id)+","+str(host_id)+")")
+                replication_degree = self.get_chunk_replication_degree(sha256, chunk_number)
+                self.cursor.execute("UPDATE chunks SET replication_degree=? WHERE id = ?" ,( str(replication_degree), str(chunk_id)))
+                self.conection.commit()
             return True
         else:
             return False  
@@ -113,20 +116,25 @@ class Data:
         host_id=self.get_host_id(host)
         if(modification_id and chunk_id and host_id):
             self.query("DELETE FROM chunks_hosts WHERE chunk_id="+str(chunk_id)+" AND host_id="+str(host_id))
+            replication_degree = self.get_chunk_replication_degree(sha256, chunk_number)
+            self.cursor.execute("UPDATE chunks SET replication_degree=? WHERE id = ?" ,( str(replication_degree), str(chunk_id)))
+            self.conection.commit()
             return True
         return False
         
-    
     def get_chunk_minimum_replication_degree(self,sha256,chunk_number):
         modification_id=self.get_modification_id(sha256)
         result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
         return result[0][3]
 
-        
     def get_ordered_chunks_difference_replication_degree(self):
         sql="SELECT * FROM chunks ORDER BY replication_degree - minimum_replication_degree DESC"
         return self.query(sql)
     
+    def get_chunk_sha256(self, modification_id):
+        sql="SELECT * FROM modifications WHERE id="+str(modification_id)
+        return self.query(sql)[0][1]
+       
     def get_file_modifications(self,file_name):
         file_id=self.get_file_id(file_name)
         if(not file_id): return []
@@ -161,7 +169,10 @@ class Data:
         return self.query("SELECT * FROM chunks")
     
     def get_hosts(self):
-        return self.query("SELECT * from hosts")
+        return self.query("SELECT * FROM hosts")
+    
+    def get_relation_chunks_hosts(self):
+        return self.query("SELECT * FROM chunks_hosts")
     
    
     

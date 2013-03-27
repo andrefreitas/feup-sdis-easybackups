@@ -57,10 +57,9 @@ class Peer:
         self.can_send_removed=True
         self.reject_putchunks={}
         self.backup_size = backup_size
-        self.needs_space_reclaiming()
+        #self.needs_space_reclaiming()
         
     def needs_space_reclaiming(self):
-        print "aqui"
         if (self.backup_size < self.check_directory_size(self.backup_dir)):
             self.remove_chunks_higher_replication_degree()
             return True
@@ -69,6 +68,12 @@ class Peer:
     def remove_chunks_higher_replication_degree(self):
         data = Data(self.db_path)
         chunks = data.get_ordered_chunks_difference_replication_degree()
+        chunks_hosts = data.get_relation_chunks_hosts()
+        while (self.backup_size < self.check_directory_size(self.backup_dir)):
+            if (id < len(chunks)):
+                sha256 = data.get_chunk_sha256(chunks[id][4])
+                data.remove_chunk_replication_degree(sha256, chunks[id][0], chunks_hosts[id])
+            
         print chunks     
             
 
@@ -210,12 +215,12 @@ class Peer:
             body = message.split(CRLF+CRLF)[1]
             print len(body)
             can_store=True
-            if(data.chunk_owner(file_id)):
-                can_store=False
+            """if(data.chunk_owner(file_id)):
+                can_store=False"""
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False
-            if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
-                can_store=False    
+            """if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
+                can_store=False"""    
             if(can_store):
                 self.backup_chunk(message)
             else: 
