@@ -83,6 +83,7 @@ class Data:
     
     def chunk_owner(self,sha256):
         modification_id=self.get_modification_id(sha256)
+        if(not modification_id): return False
         return len(self.query("SELECT * FROM files, modifications WHERE files.id=modifications.file_id and modifications.id="+str(modification_id))) > 0
         
         
