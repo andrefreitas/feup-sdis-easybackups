@@ -158,6 +158,12 @@ class Data:
             return self.query("SELECT id FROM hosts WHERE host=\""+host+"\"")[0][0]
         else:
             return False
+        
+    def get_host(self, host_id):
+        return self.query("SELECT host FROM hosts WHERE id="+str(host_id))[0][0]
+        
+    def get_hosts_associated_chunk(self, chunk_id):
+        return self.query("SELECT * FROM chunks_hosts WHERE chunk_id=" + str(chunk_id))
     
     def get_modifications(self):
         return self.query("SELECT * FROM modifications")
@@ -170,10 +176,6 @@ class Data:
     
     def get_hosts(self):
         return self.query("SELECT * FROM hosts")
-    
-    def get_relation_chunks_hosts(self):
-        return self.query("SELECT * FROM chunks_hosts")
-    
    
     
 # Tests
