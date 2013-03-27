@@ -33,7 +33,6 @@ stop_restore_waiting=False
 subscriptions={}
 restored={}
 
-
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
 
@@ -54,6 +53,7 @@ class Peer:
         self.shell=self.create_socket(self.shell_port)
         self.db_path = self.home_dir + "/data.db"
         self.db_path = self.db_path.decode("latin1")
+        self.can_send_removed=True
 
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -119,10 +119,10 @@ class Peer:
         
     
     def monitor_chunks(self):
-        monitor=ChunksMonitor(self.backup_dir, self.mc, self.mc_address,self.mc_port,self.db_path)
+        monitor=ChunksMonitor(self.backup_dir, self.shell_port,self.db_path)
         monitor.start()
+        monitor.join()
         
-
     
     def create_multicast_socket(self,multicast_address,multicast_port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -160,6 +160,7 @@ class Peer:
                 modification_date=modification_date[:10]+"T"+modification_date[11:19]
                 message+= " " + modification_date
             self.shell.sendto(message,addr)
+        
         elif(operation=="restoremodification"):
             file_name = args[1]
             option = int(args[2])
@@ -172,6 +173,13 @@ class Peer:
         elif(operation=="delete"):
             file_name=args[1]
             self.request_file_deletion(file_name)
+            
+        elif(operation=="REMOVED"):
+            if(self.can_send_removed):
+                self.mc.sendto(message,(self.mc_address,self.mc_port))
+                print "Pode enviar removed"
+            else:
+                print "Nao pode enviar removed"
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -183,7 +191,9 @@ class Peer:
         elif(operation == "CHUNK"):
             self.save_chunk_to_restore(message)
         elif(operation=="DELETE"):
+            self.can_send_removed=False
             self.delete_chunks(message)
+            self.can_send_removed=True
         elif(operation=="STORED"):
             self.increment_chunk_replication_degree(message,addr)
         elif(operation=="REMOVED"):

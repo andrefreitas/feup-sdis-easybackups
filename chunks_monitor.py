@@ -1,18 +1,18 @@
 from data import Data
 import peer
 import time
+import socket
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import re
 
 class ChunksMonitor(FileSystemEventHandler):
     
-    def __init__(self,backup_directory,socket,address,port,db_path):
+    def __init__(self,backup_directory,shell_port,db_path):
         self.backup_directory=backup_directory
         self.db_path=db_path
-        self.socket=socket
-        self.address=address
-        self.port=port
+        self.socket=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.shell_port=shell_port
         
     def send_removed(self,event,action):
         data=Data(self.db_path)
@@ -28,9 +28,9 @@ class ChunksMonitor(FileSystemEventHandler):
             if(data.chunk_sha256_exist(chunk_number, file_id)):
                 message="REMOVED "+peer.VERSION+" "+file_id+" "+chunk_number+peer.CRLF+peer.CRLF
                 peer.print_message("The chunk "+ file_name +" has been "+action)
-                self.socket.sendto(message,(self.address,self.port))
+                self.socket.sendto(message,("127.0.0.1",self.shell_port))
     
-    def on_moved(self, event):
+    def on_moved(self, event): 
         self.send_removed(event,"moved")
         
     def on_deleted(self, event):
