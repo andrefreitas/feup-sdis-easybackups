@@ -57,6 +57,20 @@ class Peer:
         self.can_send_removed=True
         self.reject_putchunks={}
         self.backup_size = backup_size
+        self.needs_space_reclaiming()
+        
+    def needs_space_reclaiming(self):
+        print "aqui"
+        if (self.backup_size < self.check_directory_size(self.backup_dir)):
+            self.remove_chunks_higher_replication_degree()
+            return True
+        return False
+    
+    def remove_chunks_higher_replication_degree(self):
+        data = Data(self.db_path)
+        chunks = data.get_ordered_chunks_difference_replication_degree()
+        print chunks     
+            
 
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -441,7 +455,7 @@ class Peer:
             if (match):
                 os.remove(directory+file_name)
     
-    # Formato retornado em Bytes, ex: 74567L          
+    # Formato retornado em Bytes       
     def check_directory_size(self, directory):
         TotalSize = 0
         for item in os.walk(directory):
