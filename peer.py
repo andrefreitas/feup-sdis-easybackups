@@ -177,9 +177,6 @@ class Peer:
         elif(operation=="REMOVED"):
             if(self.can_send_removed):
                 self.mc.sendto(message,(self.mc_address,self.mc_port))
-                print "Pode enviar removed"
-            else:
-                print "Nao pode enviar removed"
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
