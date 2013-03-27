@@ -54,6 +54,7 @@ class Peer:
         self.db_path = self.home_dir + "/data.db"
         self.db_path = self.db_path.decode("latin1")
         self.can_send_removed=True
+        self.reject_putchunks={}
 
     def init_home_dir(self):
         self.backup_dir=self.home_dir+"/"+BACKUP_DIR+"/"
@@ -176,6 +177,9 @@ class Peer:
             
         elif(operation=="REMOVED"):
             if(self.can_send_removed):
+                file_id=message.split[2]
+                chunk_number=message.split[3]
+                self.reject_putchunks[file_id+chunk_number]=datetime.datetime.now() + datetime.timedelta(0,60)
                 message+=CRLF+CRLF
                 self.mc.sendto(message,(self.mc_address,self.mc_port))
     
@@ -183,7 +187,17 @@ class Peer:
         operation=message.split(" ")[0].strip(' \t\n\r')
         message=message.strip(' \t\n\r')
         if (operation == "PUTCHUNK"):
-            self.backup_chunk(message)
+            file_id=message.split(" ")[2]
+            chunk_number=message.split(" ")[3]
+            now=datetime.now()
+            can_store=True
+            if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
+                can_store=False     
+            if(can_store):
+                self.backup_chunk(message)
+            else: 
+                print "Nao pode restaurar porque foi eliminado ha pouco tempo"
+                
         elif(operation == "GETCHUNK"):
             self.get_and_send_chunk(message)
         elif(operation == "CHUNK"):
