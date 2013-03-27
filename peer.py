@@ -13,6 +13,7 @@ import shutil
 from file import File
 from threading import Thread,Timer
 from datetime import datetime
+from datetime import timedelta
 from data import Data
 from chunks_monitor import ChunksMonitor
 
@@ -179,7 +180,7 @@ class Peer:
             if(self.can_send_removed):
                 file_id=message.split(" ")[2]
                 chunk_number=message.split(" ")[3]
-                self.reject_putchunks[file_id+chunk_number]=datetime.datetime.now() + datetime.timedelta(0,60)
+                self.reject_putchunks[file_id+chunk_number]=datetime.now() + timedelta(0,60)
                 message+=CRLF+CRLF
                 self.mc.sendto(message,(self.mc_address,self.mc_port))
     
