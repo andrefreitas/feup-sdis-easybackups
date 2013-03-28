@@ -28,7 +28,7 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-LOOPBACK=0
+LOOPBACK=1
 waiting=False
 stop_restore_waiting=False
 subscriptions={}
@@ -70,15 +70,10 @@ class Peer:
         chunks = data.get_ordered_chunks_difference_replication_degree()
         el = 0
         while (self.backup_size < self.check_directory_size(self.backup_dir)):
-            chunk_id = chunks[el][0]
             modification_id = chunks[el][4]
             chunk_number = chunks[el][1]
-            chunks_hosts = data.get_hosts_associated_chunk(chunk_id)
-            """ TODO: ir buscar o host correto """
-            host_id = chunks_hosts[1][1]
             sha256 = data.get_chunk_sha256(modification_id)
-            host = data.get_host(host_id)
-            data.remove_chunk_replication_degree(sha256, chunk_number, host)
+            data.delete_chunk_removed(chunk_number, sha256)
             file_name = self.backup_dir+str(sha256)+"_"+str(chunk_number)+".chunk"
             os.remove(file_name)
             message = "REMOVED " + VERSION + " " + sha256 + " " + str(chunk_number) + CRLF + CRLF
