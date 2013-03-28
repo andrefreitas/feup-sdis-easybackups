@@ -293,9 +293,10 @@ class Peer:
         
     def get_file(self, sha256, file_name,chunks):
         f = File(file_name,sha256)
-        result=f.restore_file(self.temp_dir, self.restore_dir,chunks)
+        while(not f.restore_file(self.temp_dir, self.restore_dir,chunks)):
+            pass
         self.remove_chunks_from_directory(f.get_file_id(), self.temp_dir)
-        return result
+        return True
         
     def request_file_deletion(self, file_name):
         data = Data(self.db_path)
@@ -386,16 +387,7 @@ class Peer:
             chunk.close()
             message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
             delay=random.randint(0,400)/1000.0
-            timeout_check = Timer(delay, self.restore_waiting())
-            timeout_check.start()
-            received_chunk_first = False
-            while (not received_chunk_first and not stop_restore_waiting):
-                received_chunk_first = restored[message]
-            
-            timeout_check.cancel()
-            if received_chunk_first:
-                return
-            #time.sleep(delay)
+            time.sleep(delay)
             self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
 
     def send_chunks(self, path,replication_degree):

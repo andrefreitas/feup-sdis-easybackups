@@ -84,6 +84,7 @@ class File:
 			chunk.close()
 			
 		restored_file.close()
+		return True
 		
 	def fetch_chunks_restore(self, path, file_id):
 		dir_list = os.listdir(path)
