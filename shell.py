@@ -38,6 +38,7 @@ class Shell:
                     break
         else:
             print "No modifications found."
+            
     def delete_file(self,full_path):
         directory=self.assure_full_path(full_path)
         self.send_message("delete "+directory+full_path)

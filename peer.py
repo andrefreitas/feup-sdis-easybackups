@@ -76,8 +76,8 @@ class Peer:
             data.delete_chunk_removed(chunk_number, sha256)
             file_name = self.backup_dir+str(sha256)+"_"+str(chunk_number)+".chunk"
             os.remove(file_name)
-            message = "REMOVED " + VERSION + " " + sha256 + " " + str(chunk_number) + CRLF + CRLF
-            self.mc.sendto(message, (self.mc_address, self.mc_port))
+            message = "REMOVED " + VERSION + " " + sha256 + " " + str(chunk_number)
+            self.shell.sendto(message, ("127.0.0.1", self.shell_port))
             el +=1
             
     def init_home_dir(self):
@@ -179,7 +179,6 @@ class Peer:
         elif(operation=="restore"):
             file_path=args[1]
             modifications=data.get_file_modifications(file_path)
-            message="found "+ str(len(modifications))
             for modification in modifications:
                 modification_date=modification[2]
                 modification_date=modification_date[:10]+"T"+modification_date[11:19]
@@ -216,7 +215,6 @@ class Peer:
             chunk_number=message.split(" ")[3]
             now=datetime.now()
             body = message.split(CRLF+CRLF)[1]
-            print len(body)
             can_store=True
             if(data.chunk_owner(file_id)):
                 can_store=False

@@ -20,7 +20,7 @@ try:
     # Init peer daemon
     p=Peer(easybackup_home , mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port,backup_size,shell_port)
     p.listen_all()
-    
+        
 except:
     print "Please run easybackupd.py from the folder..."
     raw_input()
