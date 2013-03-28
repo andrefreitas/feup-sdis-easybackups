@@ -179,6 +179,7 @@ class Peer:
         elif(operation=="restore"):
             file_path=args[1]
             modifications=data.get_file_modifications(file_path)
+            message="found "+ str(len(modifications))
             for modification in modifications:
                 modification_date=modification[2]
                 modification_date=modification_date[:10]+"T"+modification_date[11:19]
