@@ -23,7 +23,7 @@ TEMP_DIR="temp"
 RESTORE_DIR="restore"
 SHELL_PORT=8383
 VERSION="1.0"
-CRLF="\n\r"
+CRLF="\r\n"
 MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
@@ -238,9 +238,20 @@ class Peer:
             time.sleep(1)
             self.can_send_removed=True
         elif(operation=="STORED"):
-            self.increment_chunk_replication_degree(message,addr)
+            if (not self.check_bigger_replication_degree(message, addr)):
+                self.increment_chunk_replication_degree(message,addr)
         elif(operation=="REMOVED"):
             self.update_chunk_replication_degree(message,addr)
+            
+    def check_bigger_replication_degree(self, message, addr):
+        data = Data(self.db_path)
+        file_id = message[2]
+        chunk_number = message[3]
+        replication_degree = data.get_chunk_replication_degree(file_id, chunk_number)
+        minimum_replication_degree = data.get_chunk_minimum_replication_degree(file_id, chunk_number)
+        if (replication_degree >= minimum_replication_degree):
+            return True
+        return False
             
     def update_chunk_replication_degree(self,message,addr):
         file_id=message.split(" ")[2]
