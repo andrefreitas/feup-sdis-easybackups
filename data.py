@@ -124,8 +124,10 @@ class Data:
         
     def get_chunk_minimum_replication_degree(self,sha256,chunk_number):
         modification_id=self.get_modification_id(sha256)
-        result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
-        return result[0][3]
+        if(modification_id):
+            result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
+            return result[0][3]
+        return False
 
     def get_ordered_chunks_difference_replication_degree(self):
         sql="SELECT * FROM chunks ORDER BY replication_degree - minimum_replication_degree DESC"
