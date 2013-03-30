@@ -136,6 +136,7 @@ class Data:
         modification_id=self.get_modification_id(sha256)
         if(modification_id):
             result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
+            print result
             return result[0][3]
         return False
 
