@@ -215,6 +215,7 @@ class Peer:
             file_id=message.split(" ")[2]
             chunk_number=message.split(" ")[3]
             now=datetime.now()
+            print "Message*"+message+"*"
             body = message.split(CRLF+CRLF)[1]
             can_store=True
             if(data.chunk_owner(file_id)):
