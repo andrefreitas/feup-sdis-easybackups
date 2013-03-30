@@ -162,7 +162,7 @@ class Peer:
     def create_socket(self,port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(("127.0.0.1", port))
+        s.bind(("", port))
         return  s
     
     def handle_shell_request(self, message,addr):
