@@ -75,7 +75,7 @@ class File:
 		restored_file=open(destination_directory+self._name, "ab")
 		chunks = self.fetch_chunks_restore(chunks_directory, self._file_id)
 		if(not (len(chunks)==expected_chunks)):
-			print "Restored failed"
+			#print "Restored failed"
 			return False
 		# Write chunks to file
 		for i in range(len(chunks)):

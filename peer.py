@@ -31,6 +31,7 @@ TIMEOUT=0.5
 LOOPBACK=0
 waiting=False
 stop_restore_waiting=False
+restore_waiting_improved_protocol=True
 subscriptions={}
 restored={}
 
@@ -402,7 +403,7 @@ class Peer:
             message="PUTCHUNK " + VERSION + " " + str(file_id) + " " + str(chunk_number)+" "+str(replication_degree) + CRLF + CRLF + chunk_content
             delay=random.randint(0,400)/1000.0
             time.sleep(delay)
-            self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
+            self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
 
     def get_and_send_chunk(self, message):
         message_list=message.split(" ")
@@ -413,10 +414,27 @@ class Peer:
             chunk = open(full_path, "rb")
             chunk_content = chunk.read()
             chunk.close()
-            message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
+            message_expected = "CHUNK " + VERSION + " " + file_id + " " + chunk_no
             delay=random.randint(0,400)/1000.0
-            time.sleep(delay)
-            self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
+            global restore_waiting_improved_protocol
+            restore_waiting_improved_protocol=True
+            timeout_restore = Timer(delay, self.quit_waiting_chunk)
+            timeout_restore.start()
+            chunk_already_sent=False
+            while (not chunk_already_sent and restore_waiting_improved_protocol):
+                chunk_already_sent = restored[message_expected]
+
+            if (not chunk_already_sent):
+                message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
+                self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
+                timeout_restore.cancel()
+            else:
+                print "Chunk received before!"
+                timeout_restore.cancel() 
+            
+    def quit_waiting_chunk(self):
+        global restore_waiting_improved_protocol
+        restore_waiting_improved_protocol=False
 
     def send_chunks(self, path,replication_degree):
         f = File(path)
