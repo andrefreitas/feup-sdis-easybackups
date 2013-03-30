@@ -136,8 +136,7 @@ class Data:
         modification_id=self.get_modification_id(sha256)
         if(modification_id):
             result=self.query("SELECT * FROM chunks WHERE modification_id="+str(modification_id)+" and number="+str(chunk_number))
-            print result
-            return result[0][3]
+            return result[0][3] if len(result>0) else False
         return False
 
     def get_ordered_chunks_difference_replication_degree(self):
