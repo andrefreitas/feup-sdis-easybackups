@@ -110,6 +110,16 @@ class Data:
         else:
             return False
         
+    def chunk_have_replication_host(self,sha256,chunk_number,host):
+        modification_id=self.get_modification_id(sha256)
+        chunk_id=self.get_chunk_id(chunk_number,sha256)
+        host_id=self.get_host_id(host)
+        if(modification_id and chunk_id and host_id):
+            res=self.query("SELECT * FROM chunks_hosts WHERE chunk_id="+str(chunk_id)+" AND host_id="+str(host_id))
+            return len(res)>0
+        return False
+            
+        
     def remove_chunk_replication_degree(self,sha256,chunk_number,host):
         modification_id=self.get_modification_id(sha256)
         chunk_id=self.get_chunk_id(chunk_number,sha256)
@@ -186,4 +196,4 @@ class Data:
 #conn=sqlite3.connect("c:\git\easybackup\data.db")
 #c = conn.cursor()
 #c=Data("C:\Users\Ana Gomes\Documents\git\easybackup\data.db")
-#c=Data("/home/andre/git/easybackup/data.db")
+#c=Data("/home/andre/easybackup/data.db")

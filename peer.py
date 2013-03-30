@@ -206,6 +206,16 @@ class Peer:
                 self.reject_putchunks[file_id+chunk_number]=datetime.now() + timedelta(0,60)
                 message+=CRLF+CRLF
                 self.mc.sendto(message,(self.mc_address,self.mc_port))
+                
+        elif(operation=="deletechunk"):
+            data= Data(self.db_path)
+            file_id=message.split(" ")[1]
+            chunk_number=message.split(" ")[2]
+            filepath=self.backup_dir+file_id+"_"+chunk_number+".chunk"
+            if (os.path.exists(filepath)):
+                os.remove(filepath)
+                data.delete_chunk_removed(chunk_number, file_id)
+            
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -249,11 +259,14 @@ class Peer:
             
     def check_bigger_replication_degree(self, message, addr):
         data = Data(self.db_path)
-        file_id = message[2]
-        chunk_number = message[3]
+        file_id = message.split(" ")[2]
+        chunk_number = message.split(" ")[3]
         replication_degree = data.get_chunk_replication_degree(file_id, chunk_number)
         minimum_replication_degree = data.get_chunk_minimum_replication_degree(file_id, chunk_number)
-        if (replication_degree >= minimum_replication_degree):
+        if (replication_degree >= minimum_replication_degree and not data.chunk_have_replication_host(file_id, chunk_number, addr[0])):
+            print_message("Sending a chunk delete  to "+str(addr[0])+" because the replication degree was already enough")
+            message="deletechunk " + file_id + " "+ chunk_number
+            self.shell.sendto(message, (addr[0], SHELL_PORT))
             return True
         return False
             
