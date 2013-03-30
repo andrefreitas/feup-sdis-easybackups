@@ -215,8 +215,11 @@ class Peer:
             file_id=message.split(" ")[2]
             chunk_number=message.split(" ")[3]
             now=datetime.now()
-            print "Message*"+message+"*"
             body = message.split(CRLF+CRLF)[1]
+            if(len(body)<2): 
+                print_message("The PUTCHUNK split failed")
+                return False
+            
             can_store=True
             if(data.chunk_owner(file_id)):
                 can_store=False
@@ -227,7 +230,7 @@ class Peer:
             if(can_store):
                 self.backup_chunk(message)
             else: 
-                print_message("PUTCHUNK rejeitado")
+                print_message("PUTCHUNK rejected")
                 
         elif(operation == "GETCHUNK"):
             self.get_and_send_chunk(message)
