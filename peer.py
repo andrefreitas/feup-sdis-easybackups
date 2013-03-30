@@ -266,7 +266,7 @@ class Peer:
         chunk_number = message.split(" ")[3]
         replication_degree = data.get_chunk_replication_degree(file_id, chunk_number)
         minimum_replication_degree = data.get_chunk_minimum_replication_degree(file_id, chunk_number)
-        if (replication_degree >= minimum_replication_degree and not data.chunk_have_replication_host(file_id, chunk_number, addr[0]) and data.chunk_owner(file_id)):
+        if (data.chunk_owner(file_id) and replication_degree >= minimum_replication_degree and not data.chunk_have_replication_host(file_id, chunk_number, addr[0])):
             print_message("Sending a chunk delete  to "+str(addr[0])+" because the replication degree was already enough")
             message="deletechunk " + file_id + " "+ chunk_number
             self.shell.sendto(message, (addr[0], SHELL_PORT))
