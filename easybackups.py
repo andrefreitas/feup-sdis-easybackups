@@ -1,5 +1,5 @@
 from shell import Shell
-
+import os
 print "Welcome to Easy Backup Shell!"
 print "Type \"help\" to see available commands"
 shell=Shell()
@@ -15,10 +15,14 @@ while(True):
         print "    - exit"
     elif (operation=="backup"):
         file_name=command[1]
+        
         replication_degree=2
         if (len(command)==3):
             replication_degree=int(command[2])
-        shell.backup_file(file_name, replication_degree)
+        if(os.path.exists(file_name)):
+            shell.backup_file(file_name, replication_degree)
+        else:
+            print "ERROR - Invalid file path"
     elif (operation=="restore"):
         file_name=command[1]
         shell.restore_file(file_name)
