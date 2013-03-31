@@ -360,7 +360,8 @@ class Peer:
                 hosts=data.get_chunk_hosts(file_id, chunk)
                 hosts=filter(lambda a:a!="localhost",hosts)
                 for host in hosts:
-                    message="deletechunk2 " + file_id + " "+ chunk
+                    host=host[0]
+                    message="deletechunk2 " + str(file_id) + " "+ str(chunk)
                     self.shell.sendto(message,(host,SHELL_PORT))
             
     def delete_chunks(self,message):
