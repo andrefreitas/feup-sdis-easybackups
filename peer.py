@@ -266,7 +266,7 @@ class Peer:
             self.can_send_removed=False
             self.delete_chunks(message)
             file_id=message.split(" ")[1].strip(CRLF+CRLF)
-            self.mc.send("deleted "+str(file_id),(addr[0],SHELL_PORT))
+            self.mc.sendto("deleted "+str(file_id),(addr[0],SHELL_PORT))
             time.sleep(1)
             self.can_send_removed=True   
         elif(operation=="STORED"):
