@@ -421,7 +421,7 @@ class Peer:
             timeout_restore = Timer(delay, self.quit_waiting_chunk)
             timeout_restore.start()
             chunk_already_sent=False
-            while (not chunk_already_sent and restore_waiting_improved_protocol):
+            while (message_expected in restored and not chunk_already_sent and restore_waiting_improved_protocol):
                 chunk_already_sent = restored[message_expected]
 
             if (not chunk_already_sent):
