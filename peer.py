@@ -228,10 +228,13 @@ class Peer:
             chunk_number=message.split(" ")[2]
             filepath=self.backup_dir+file_id+"_"+chunk_number+".chunk"
             if (os.path.exists(filepath)):
+                self.can_send_removed=False
                 os.remove(filepath)
                 data.delete_chunk_removed(chunk_number, file_id)
                 print_message("Sending ack to "+str(addr))
                 self.mc.sendto("ack "+message,addr)
+                time.sleep(1)
+                self.can_send_removed=True
                 
         elif(operation=="ack"):
             args=message.split(" ")
