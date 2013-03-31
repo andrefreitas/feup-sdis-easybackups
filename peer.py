@@ -57,6 +57,7 @@ class Peer:
         self.db_path = self.db_path.decode("latin1")
         self.can_send_removed=True
         self.reject_putchunks={}
+        self.pending_deletechunks={}
         self.backup_size = backup_size
         self.needs_space_reclaiming()
         
@@ -222,7 +223,22 @@ class Peer:
                 data.delete_chunk_removed(chunk_number, file_id)
                 
         elif(operation=="deletechunk2"):
-            print "inside if of operation deletechunk2"
+            data= Data(self.db_path)
+            file_id=message.split(" ")[1]
+            chunk_number=message.split(" ")[2]
+            filepath=self.backup_dir+file_id+"_"+chunk_number+".chunk"
+            if (os.path.exists(filepath)):
+                os.remove(filepath)
+                data.delete_chunk_removed(chunk_number, file_id)
+                print_message("Sending ack to "+str(addr))
+                self.mc.sendto("ack "+message,addr)
+                
+        elif(operation=="ack"):
+            args=message.split(" ")
+            suboperation=args[1]
+            if(suboperation=="deletechunk2"):
+                if(message[4:] in self.pending_deletechunks):
+                    del self.pending_deletechunks[message[4:]]
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -363,6 +379,7 @@ class Peer:
                     host=host[0]
                     message="deletechunk2 " + str(file_id) + " "+ str(chunk)
                     self.shell.sendto(message,(host,SHELL_PORT))
+                    self.pending_deletechunks[message]=(host,SHELL_PORT)
             
     def delete_chunks(self,message):
         file_id=message.split(" ")[1].strip(CRLF+CRLF)
