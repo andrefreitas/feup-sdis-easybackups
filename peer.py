@@ -291,7 +291,7 @@ class Peer:
         elif(operation == "GETCHUNK"):
             version = message.split(" ")[1]
             self.create_restore_subscription(message, version)
-            self.get_and_send_chunk(message)
+            self.get_and_send_chunk(message, version, addr)
         elif(operation == "CHUNK"):
             print message.split(CRLF+CRLF)[0]
             version=message.split(" ")[1]
