@@ -99,13 +99,29 @@ class Peer:
             shutil.copy2("data.db", self.home_dir)
         
     
-    def listen_shell(self):    
+    def listen_shell(self):
+        pending_deletes_cron= Thread(target=self.pending_deletes_cron, args=())
+        pending_deletes_cron.start()
         while True:
             message,addr = self.shell.recvfrom(MAX_MESSAGE_SIZE)
             message=message.strip(' \t\n\r')
             print_message("Shell received \"" + message+"\"")
             self.handle_shell_request(message,addr)
+        pending_deletes_cron.join()
 
+    def pending_deletes_cron(self):
+        while(True):
+            modifications=self.pending_deletes.keys()
+            print_message("CRON found "+str(len(modifications))+ " modifications pending delete")
+            for file_id in modifications:
+                message="DELETE2 "+str(file_id)+CRLF+CRLF
+                self.mc.sendto(message, (self.mc_address, self.mc_port))
+                self.pending_deletes[file_id][0]-=1
+                if(self.pending_deletes[file_id][0]==0):
+                    del self.pending_deletes[file_id]
+            time.sleep(60)
+            
+        
     def listen(self,sock,channel):
         while True:
             global subscriptions
@@ -224,7 +240,15 @@ class Peer:
                 
         elif(operation=="deleted"):
             file_id=message.split(" ")[1]
-            print self.pending_deletes
+            if (file_id in self.pending_deletes):
+                host=addr[0]
+                try:
+                    self.pending_deletes[file_id][1].remove(host)
+                    if(len(self.pending_deletes[file_id][1])==0):
+                        del self.pending_deletes[file_id]
+                except:
+                    pass
+               
        
     
     def handle_request(self, message,addr):
