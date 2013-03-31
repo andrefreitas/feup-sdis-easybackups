@@ -28,7 +28,7 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-LOOPBACK=1
+LOOPBACK=0
 waiting=False
 stop_restore_waiting=False
 restore_waiting_improved_protocol=True
@@ -231,8 +231,8 @@ class Peer:
                 print_message("The PUTCHUNK split failed")
                 return False
             can_store=True
-            #if(data.chunk_owner(file_id)):
-            #can_store=False
+            if(data.chunk_owner(file_id)):
+                can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False
             if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
