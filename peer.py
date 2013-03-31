@@ -289,7 +289,8 @@ class Peer:
                 print_message("PUTCHUNK rejected")
                 
         elif(operation == "GETCHUNK"):
-            self.create_restore_subscription(message)
+            version = message.split(" ")[1]
+            self.create_restore_subscription(message, version)
             self.get_and_send_chunk(message)
         elif(operation == "CHUNK"):
             print message.split(CRLF+CRLF)[0]
