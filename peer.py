@@ -222,20 +222,6 @@ class Peer:
                 os.remove(filepath)
                 data.delete_chunk_removed(chunk_number, file_id)
                 
-        elif(operation=="deletechunk2"):
-            self.can_send_removed=False
-            data= Data(self.db_path)
-            file_id=message.split(" ")[1]
-            chunk_number=message.split(" ")[2]
-            filepath=self.backup_dir+file_id+"_"+chunk_number+".chunk"
-            if (os.path.exists(filepath)):
-                os.remove(filepath)
-                data.delete_chunk_removed(chunk_number, file_id)
-                print_message("Sending ack to "+str(addr))
-                self.mc.sendto("ack "+message,addr)
-            time.sleep(1)
-            self.can_send_removed=True
-                
         elif(operation=="ack"):
             args=message.split(" ")
             suboperation=args[1]
@@ -374,14 +360,15 @@ class Peer:
         modifications=data.get_file_modifications(file_name)
         for modification in modifications:
             file_id=modification[1]
+            message="DELETE2 "+str(file_id)+CRLF+CRLF
+            self.mc.sendto(message, (self.mc_address, self.mc_port))
             chunks=modification[3]
             for chunk in range(chunks):
                 hosts=data.get_chunk_hosts(file_id, chunk)
                 hosts=filter(lambda a:a!="localhost",hosts)
                 for host in hosts:
                     host=host[0]
-                    message="deletechunk2 " + str(file_id) + " "+ str(chunk)
-                    self.shell.sendto(message,(host,SHELL_PORT))
+                    message="deletedchunk " + str(file_id) + " "+ str(chunk)
                     self.pending_deletechunks[message]=(host,SHELL_PORT)
             
     def delete_chunks(self,message):
