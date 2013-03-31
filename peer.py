@@ -200,6 +200,10 @@ class Peer:
             file_name=args[1]
             self.request_file_deletion(file_name)
             
+        elif(operation=="delete2"):
+            file_name=args[1]
+            self.request_file_deletion2(file_name)
+            
         elif(operation=="REMOVED"):
             if(self.can_send_removed):
                 file_id=message.split(" ")[2]
@@ -216,7 +220,9 @@ class Peer:
             if (os.path.exists(filepath)):
                 os.remove(filepath)
                 data.delete_chunk_removed(chunk_number, file_id)
-            
+                
+        elif(operation=="deletechunk2"):
+            print "inside if of operation deletechunk2"
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -343,6 +349,19 @@ class Peer:
             file_id=modification[1]
             message="DELETE "+str(file_id)+CRLF+CRLF
             self.mc.sendto(message, (self.mc_address, self.mc_port))
+            
+    def request_file_deletion2(self, file_name):
+        data = Data(self.db_path)
+        modifications=data.get_file_modifications(file_name)
+        for modification in modifications:
+            file_id=modification[1]
+            chunks=modification[3]
+            for chunk in range(chunks):
+                hosts=data.get_chunk_hosts(file_id, chunk)
+                hosts=filter(lambda a:a!="localhost",hosts)
+                for host in hosts:
+                    message="deletechunk2 " + file_id + " "+ chunk
+                    self.shell.sendto(message,(host,SHELL_PORT))
             
     def delete_chunks(self,message):
         file_id=message.split(" ")[1].strip(CRLF+CRLF)

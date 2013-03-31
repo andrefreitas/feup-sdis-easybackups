@@ -48,6 +48,11 @@ class Shell:
         directory=self.assure_full_path(full_path)
         self.send_message("delete "+directory+full_path)
         
+    def delete2_file(self,full_path):
+        directory=self.assure_full_path(full_path)
+        self.send_message("delete2 "+directory+full_path)
+        
+        
     def assure_full_path(self,full_path):
         file_extension_pattern="^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$"
         directory=""

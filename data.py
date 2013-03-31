@@ -146,6 +146,15 @@ class Data:
     def get_chunk_sha256(self, modification_id):
         sql="SELECT * FROM modifications WHERE id="+str(modification_id)
         return self.query(sql)[0][1]
+    
+    def get_chunk_hosts(self,sha256,chunk_number):
+        chunk_id=self.get_chunk_id(chunk_number, sha256)
+        if(chunk_id):
+            sql="SELECT hosts.host FROM chunks_hosts, hosts WHERE chunks_hosts.chunk_id="+str(chunk_id)+" AND chunks_hosts.host_id=hosts.id"
+            return self.query(sql)
+        else:
+            return False
+            
        
     def get_file_modifications(self,file_name):
         file_id=self.get_file_id(file_name)

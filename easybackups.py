@@ -12,6 +12,7 @@ while(True):
         print "    - backup <file> (<replication degree>)"
         print "    - restore <file>"
         print "    - delete <file>"
+        print "    - delete2 <file> : enhancement of delete"
         print "    - exit"
     elif (operation=="backup"):
         file_name=command[1]
@@ -29,6 +30,9 @@ while(True):
     elif (operation=="delete"):
         file_name=command[1]
         shell.delete_file(file_name)
+    elif (operation=="delete2"):
+        file_name=command[1]
+        shell.delete2_file(file_name)
     elif(operation=="exit"):
         break
         
