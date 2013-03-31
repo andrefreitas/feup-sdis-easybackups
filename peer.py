@@ -23,6 +23,7 @@ TEMP_DIR="temp"
 RESTORE_DIR="restore"
 SHELL_PORT=8383
 VERSION="1.0"
+VERSION_2="1.2"
 CRLF="\r\n"
 MAX_MESSAGE_SIZE=65565
 TTL=1
@@ -210,8 +211,20 @@ class Peer:
             modification = data.get_file_modifications(file_name)[option-1]
             sha256 = modification[1]
             chunks = int(modification[3])
-            self.restore_file_modification(sha256, chunks)
+            self.restore_file_modification(sha256, chunks, VERSION)
             self.get_file(sha256, file_name,chunks)
+            
+        elif(operation=="restoremodification2"):
+            file_name = args[1]
+            option = int(args[2])
+            modification = data.get_file_modifications(file_name)[option-1]
+            sha256 = modification[1]
+            chunks = int(modification[3])
+            self.restore_file_modification(sha256, chunks, VERSION_2)
+            self.get_file(sha256, file_name,chunks)
+            
+        elif(operation=="CHUNK"):
+            self.save_chunk_to_restore(message)
             
         elif(operation=="delete"):
             file_name=args[1]
@@ -280,7 +293,11 @@ class Peer:
             self.get_and_send_chunk(message)
         elif(operation == "CHUNK"):
             print message.split(CRLF+CRLF)[0]
-            self.save_chunk_to_restore(message)
+            version=message.split(" ")[1]
+            if (version == VERSION):
+                self.save_chunk_to_restore(message)
+            else:
+                self.chunk_restore_received(message)
         elif(operation=="DELETE"):
             self.can_send_removed=False
             self.delete_chunks(message)
@@ -300,11 +317,11 @@ class Peer:
             self.update_chunk_replication_degree(message,addr)
             
     
-    def create_restore_subscription(self, getchunk_message):
+    def create_restore_subscription(self, getchunk_message, version):
         args = getchunk_message.split(" ")
         file_id = args[2]
         chunk_no = args[3]
-        message_expected = "CHUNK " + VERSION + " " + file_id + " " + chunk_no
+        message_expected = "CHUNK " + version + " " + file_id + " " + chunk_no
         restored[message_expected] = False   
 
     def check_bigger_replication_degree(self, message, addr):
@@ -406,11 +423,11 @@ class Peer:
         self.remove_chunks_from_directory(file_id, self.backup_dir) 
         
         
-    def restore_file_modification(self, file_id, chunks):
+    def restore_file_modification(self, file_id, chunks, version):
         total_chunks=0
         for i in range(chunks):
-            message = "GETCHUNK " + VERSION + " " + file_id + " " + str(i) + CRLF + CRLF
-            message_expected = "CHUNK " + VERSION + " " + file_id + " " + str(i)
+            message = "GETCHUNK " + version + " " + file_id + " " + str(i) + CRLF + CRLF
+            message_expected = "CHUNK " + version + " " + file_id + " " + str(i)
             restored[message_expected] = False
             chunk_received = False
             attempts=0
@@ -445,6 +462,11 @@ class Peer:
     def restore_waiting(self):
         global stop_restore_waiting
         stop_restore_waiting = True
+        
+    def chunk_restore_received(self, message):
+        check_message = message.split(CRLF+CRLF)[0]
+        if (check_message in restored):
+            restored[check_message] = True
 
     def save_chunk_to_restore(self, message):
         original_message = message
@@ -471,7 +493,7 @@ class Peer:
             time.sleep(delay)
             self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
 
-    def get_and_send_chunk(self, message):
+    def get_and_send_chunk(self, message, version, addr):
         message_list=message.split(" ")
         file_id=message_list[2]
         chunk_no=message_list[3]
@@ -480,7 +502,7 @@ class Peer:
             chunk = open(full_path, "rb")
             chunk_content = chunk.read()
             chunk.close()
-            message_expected = "CHUNK " + VERSION + " " + file_id + " " + chunk_no
+            message_expected = "CHUNK " + version + " " + file_id + " " + chunk_no
             delay=random.randint(0,400)/1000.0
             global restore_waiting_improved_protocol
             restore_waiting_improved_protocol=True
@@ -493,7 +515,12 @@ class Peer:
                     chunk_already_sent = restored[message_expected]
 
             if (not chunk_already_sent):
-                message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
+                if (version == VERSION):
+                    message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
+                elif(version == VERSION_2):
+                    message="CHUNK " + VERSION_2 + " " + file_id + " " + chunk_no + CRLF + CRLF
+                    chunk_message = "CHUNK " + VERSION_2 + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
+                    self.shell.sendto(chunk_message, (addr[0], SHELL_PORT))
                 self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
                 timeout_restore.cancel()
             else:
