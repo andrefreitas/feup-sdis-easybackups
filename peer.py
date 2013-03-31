@@ -28,7 +28,7 @@ MAX_MESSAGE_SIZE=65565
 TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
-LOOPBACK=0
+LOOPBACK=1
 waiting=False
 stop_restore_waiting=False
 restore_waiting_improved_protocol=True
@@ -230,10 +230,9 @@ class Peer:
             if(len(body)<2): 
                 print_message("The PUTCHUNK split failed")
                 return False
-            
             can_store=True
-            if(data.chunk_owner(file_id)):
-                can_store=False
+            #if(data.chunk_owner(file_id)):
+            #can_store=False
             if((file_id+chunk_number) in self.reject_putchunks and now<self.reject_putchunks[file_id+chunk_number]):
                 can_store=False
             if ((self.backup_size - self.check_directory_size(self.backup_dir)) <= len(body)):
@@ -244,8 +243,10 @@ class Peer:
                 print_message("PUTCHUNK rejected")
                 
         elif(operation == "GETCHUNK"):
+            self.create_restore_subscription(message)
             self.get_and_send_chunk(message)
         elif(operation == "CHUNK"):
+            print message.split(CRLF+CRLF)[0]
             self.save_chunk_to_restore(message)
         elif(operation=="DELETE"):
             self.can_send_removed=False
@@ -258,6 +259,14 @@ class Peer:
         elif(operation=="REMOVED"):
             self.update_chunk_replication_degree(message,addr)
             
+    
+    def create_restore_subscription(self, getchunk_message):
+        args = getchunk_message.split(" ")
+        file_id = args[2]
+        chunk_no = args[3]
+        message_expected = "CHUNK " + VERSION + " " + file_id + " " + chunk_no
+        restored[message_expected] = False   
+
     def check_bigger_replication_degree(self, message, addr):
         data = Data(self.db_path)
         file_id = message.split(" ")[2]
@@ -422,7 +431,8 @@ class Peer:
             timeout_restore.start()
             chunk_already_sent=False
             while (not chunk_already_sent and restore_waiting_improved_protocol):
-                chunk_already_sent = restored[message_expected]
+                if (message_expected in restored):
+                    chunk_already_sent = restored[message_expected]
 
             if (not chunk_already_sent):
                 message="CHUNK " + VERSION + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
