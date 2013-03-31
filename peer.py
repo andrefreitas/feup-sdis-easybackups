@@ -223,8 +223,7 @@ class Peer:
                 data.delete_chunk_removed(chunk_number, file_id)
                 
         elif(operation=="deleted"):
-            args=message.split(" ")
-            file_id=args[1]
+            file_id=message.split(" ")[1]
             print self.pending_deletes
        
     
