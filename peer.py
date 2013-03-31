@@ -412,7 +412,7 @@ class Peer:
             message="PUTCHUNK " + VERSION + " " + str(file_id) + " " + str(chunk_number)+" "+str(replication_degree) + CRLF + CRLF + chunk_content
             delay=random.randint(0,400)/1000.0
             time.sleep(delay)
-            self.mdb.sendto(message, (self.mdb_address, self.mdb_port))
+            self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
 
     def get_and_send_chunk(self, message):
         message_list=message.split(" ")
