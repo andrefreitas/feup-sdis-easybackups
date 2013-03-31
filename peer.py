@@ -29,12 +29,12 @@ TTL=1
 MAX_ATTEMPTS=5
 TIMEOUT=0.5
 LOOPBACK=0
+MAX_DELETE_WAITING_TIME=60
 waiting=False
 stop_restore_waiting=False
 restore_waiting_improved_protocol=True
 subscriptions={}
 restored={}
-
 def print_message(message):
     print  "[" + datetime.now().strftime("%d/%m/%y %H:%M") + "] " + message
 
@@ -57,7 +57,7 @@ class Peer:
         self.db_path = self.db_path.decode("latin1")
         self.can_send_removed=True
         self.reject_putchunks={}
-        self.pending_deletechunks={}
+        self.pending_deletes={}
         self.backup_size = backup_size
         self.needs_space_reclaiming()
         
@@ -222,12 +222,11 @@ class Peer:
                 os.remove(filepath)
                 data.delete_chunk_removed(chunk_number, file_id)
                 
-        elif(operation=="ack"):
+        elif(operation=="deleted"):
             args=message.split(" ")
-            suboperation=args[1]
-            if(suboperation=="deletechunk2"):
-                if(message[4:] in self.pending_deletechunks):
-                    del self.pending_deletechunks[message[4:]]
+            file_id=args[1]
+            print self.pending_deletes
+       
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -264,6 +263,13 @@ class Peer:
             self.delete_chunks(message)
             time.sleep(1)
             self.can_send_removed=True
+        elif(operation=="DELETE2"):
+            self.can_send_removed=False
+            self.delete_chunks(message)
+            file_id=message.split(" ")[1].strip(CRLF+CRLF)
+            self.mc.send("deleted "+str(file_id),(addr[0],SHELL_PORT))
+            time.sleep(1)
+            self.can_send_removed=True   
         elif(operation=="STORED"):
             if (not self.check_bigger_replication_degree(message, addr)):
                 self.increment_chunk_replication_degree(message,addr)
@@ -363,13 +369,14 @@ class Peer:
             message="DELETE2 "+str(file_id)+CRLF+CRLF
             self.mc.sendto(message, (self.mc_address, self.mc_port))
             chunks=modification[3]
+            hosts_set=set([])
             for chunk in range(chunks):
                 hosts=data.get_chunk_hosts(file_id, chunk)
                 hosts=filter(lambda a:a!="localhost",hosts)
                 for host in hosts:
                     host=host[0]
-                    message="deletedchunk " + str(file_id) + " "+ str(chunk)
-                    self.pending_deletechunks[message]=(host,SHELL_PORT)
+                    hosts_set.add(host)
+            self.pending_deletes[str(file_id)]=[MAX_DELETE_WAITING_TIME,hosts_set]
             
     def delete_chunks(self,message):
         file_id=message.split(" ")[1].strip(CRLF+CRLF)
