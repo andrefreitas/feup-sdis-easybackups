@@ -1,3 +1,9 @@
+"""
+ Easy Backup Shell
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is a class that runs the shell to manage the peer. 
+ It uses the Shell class that is the core.
+"""
 from shell import Shell
 import os
 print "Welcome to Easy Backup Shell!"

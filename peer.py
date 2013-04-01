@@ -1,7 +1,9 @@
 """
-This class describes a peer computer. The peer have a home directory
-that is where the backups are store and the temporary files, ie. chunks
-that were generated to send to another peer in the network.
+ Peer
+ Authors: Ana Gomes, Andre Freitas
+ Description: This class describes a peer computer. The peer have a home directory
+ that is where the backups are store and the temporary files, ie. chunks
+ that were generated to send to another peer in the network. It's used by the daemon
 """
 import os
 import socket

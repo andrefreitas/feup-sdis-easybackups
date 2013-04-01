@@ -1,3 +1,9 @@
+"""
+ Shell
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is a class that is used by the EasyBackup Shell and does all the work,
+ sending requests to the peer daemon.
+"""
 import socket
 import re
 import os

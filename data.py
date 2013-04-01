@@ -1,3 +1,8 @@
+"""
+ Data
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is a class to abstract the acess to the database by functions
+"""
 import sqlite3
 
 class Data:
@@ -197,12 +202,3 @@ class Data:
     
     def get_hosts(self):
         return self.query("SELECT * FROM hosts")
-   
-    
-# Tests
-#path = expanduser("~") + "/easybackup/data.db"
-#c=sqlite3.connect(path.decode("latin1"))
-#conn=sqlite3.connect("c:\git\easybackup\data.db")
-#c = conn.cursor()
-#c=Data("C:\Users\Ana Gomes\Documents\git\easybackup\data.db")
-#c=Data("/home/andre/easybackup/data.db")

@@ -1,3 +1,8 @@
+"""
+ File
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is a class to manipulate files, generate chunks and restores.
+"""
 import re
 import hashlib
 import os

@@ -1,3 +1,9 @@
+"""
+ Chunks Monitor
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is a class that handles file manipulation events,
+ such as deletes to notify the daemon that a chunk has been deleted.
+"""
 from data import Data
 import peer
 import time

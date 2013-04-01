@@ -1,8 +1,11 @@
+"""
+Easy Backup Daemon
+ Authors: Ana Gomes, Andre Freitas
+ Description: This is the peer daemon that handles everything and must be ran in background
+"""
 from peer import Peer
 from os.path import expanduser
 import ConfigParser
-
-""" This module runs the EasyBackup Daemon """
 
 # Read Configurations
 config = ConfigParser.ConfigParser()
