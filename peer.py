@@ -188,6 +188,8 @@ class Peer:
         args=message.split(" ")
         operation=args[0]
         data = Data(self.db_path)
+	chunks=0
+	file_name=""
         if(operation=="backup"):
             file_path=args[1]
             replication_degree=args[2]
@@ -211,19 +213,26 @@ class Peer:
             modification = data.get_file_modifications(file_name)[option-1]
             sha256 = modification[1]
             chunks = int(modification[3])
-            self.restore_file_modification(sha256, chunks, VERSION)
-            self.get_file(sha256, file_name,chunks)
+	    self.restore_file_modification(sha256, chunks, VERSION)
+	    self.get_file(sha256, file_name,chunks)
             
         elif(operation=="restoremodification2"):
+            print "restoremodification2"
             file_name = args[1]
             option = int(args[2])
             modification = data.get_file_modifications(file_name)[option-1]
             sha256 = modification[1]
             chunks = int(modification[3])
-            self.restore_file_modification(sha256, chunks, VERSION_2)
-            self.get_file(sha256, file_name,chunks)
+            is_equal = self.request_file_modification(sha256, chunks, VERSION_2)
+            print str(is_equal) + " no restore modification "
+	    time.sleep(10)
+	    self.get_file(sha256, file_name,chunks)
             
         elif(operation=="CHUNK"):
+	    print "recebi um chunk na shell"
+	    all_received = True
+	    file_id = message.split(" ")[2]	 
+	    self.chunk_restore_received(message)
             self.save_chunk_to_restore(message)
             
         elif(operation=="delete"):
@@ -262,7 +271,13 @@ class Peer:
                 except:
                     pass
                
-       
+    def request_file_modification(self, file_id, chunks, version):
+        total_chunks=0
+        for i in range(chunks):
+            message = "GETCHUNK " + version + " " + file_id + " " + str(i) + CRLF + CRLF
+	    self.mc.sendto(message, (self.mc_address, self.mc_port))
+            message_expected = "CHUNK " + version + " " + file_id + " " + str(i)
+            restored[message_expected] = False
     
     def handle_request(self, message,addr):
         operation=message.split(" ")[0].strip(' \t\n\r')
@@ -296,9 +311,14 @@ class Peer:
             print message.split(CRLF+CRLF)[0]
             version=message.split(" ")[1]
             if (version == VERSION):
+		self.chunk_restore_received(message)
                 self.save_chunk_to_restore(message)
             else:
-                self.chunk_restore_received(message)
+                print "entrou no chunk da segunda versao"
+		data = Data(self.db_path)
+		file_id=message.split(" ")[2]
+		self.chunk_restore_received(message)
+                
         elif(operation=="DELETE"):
             self.can_send_removed=False
             self.delete_chunks(message)
@@ -391,7 +411,7 @@ class Peer:
         f = File(file_name,sha256)
         while(not f.restore_file(self.temp_dir, self.restore_dir,chunks)):
             pass
-        self.remove_chunks_from_directory(f.get_file_id(), self.temp_dir)
+        #self.remove_chunks_from_directory(f.get_file_id(), self.temp_dir)
         return True
         
     def request_file_deletion(self, file_name):
@@ -466,8 +486,7 @@ class Peer:
         
     def chunk_restore_received(self, message):
         check_message = message.split(CRLF+CRLF)[0]
-        if (check_message in restored):
-            restored[check_message] = True
+        restored[check_message] = True
 
     def save_chunk_to_restore(self, message):
         original_message = message
@@ -521,7 +540,7 @@ class Peer:
                 elif(version == VERSION_2):
                     message="CHUNK " + VERSION_2 + " " + file_id + " " + chunk_no + CRLF + CRLF
                     chunk_message = "CHUNK " + VERSION_2 + " " + file_id + " " + chunk_no + CRLF + CRLF + chunk_content
-                    self.shell.sendto(chunk_message, (addr[0], SHELL_PORT))
+                    self.mc.sendto(chunk_message, (addr[0], SHELL_PORT))
                 self.mdr.sendto(message, (self.mdr_address, self.mdr_port))
                 timeout_restore.cancel()
             else:

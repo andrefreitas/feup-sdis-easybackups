@@ -38,7 +38,9 @@ class Shell:
             while True:
                 option = int(raw_input("\n> "))
                 if (option >= 1 and option <= int(answer[1])):
-                    self.send_message(restore_modification + " " + directory + full_path + " " +str(option) )
+                    message = restore_modification + " " + directory + full_path + " " +str(option)
+                    self.send_message(message)
+                    print message
                     print "Check your ~/easybackup/restore directory"
                     break
         else:
