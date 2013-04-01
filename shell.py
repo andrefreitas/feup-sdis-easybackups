@@ -25,7 +25,7 @@ class Shell:
         else:
             print "Backup failed. Try another replication degree?"
     
-    def restore_file(self,full_path, restore_modification):
+    def restore_file(self,full_path):
         directory=self.assure_full_path(full_path)
         self.send_message("restore "+directory+full_path+"\n")
         answer = self.receive_message().split(" ")
@@ -38,9 +38,7 @@ class Shell:
             while True:
                 option = int(raw_input("\n> "))
                 if (option >= 1 and option <= int(answer[1])):
-                    message = restore_modification + " " + directory + full_path + " " +str(option)
-                    self.send_message(message)
-                    print message
+                    self.send_message("restoremodification " + directory + full_path + " " +str(option) )
                     print "Check your ~/easybackup/restore directory"
                     break
         else:

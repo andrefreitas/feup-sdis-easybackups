@@ -13,7 +13,6 @@ while(True):
         print "    - restore <file>"
         print "    - delete <file>"
         print "    - delete2 <file> : enhancement of delete"
-        print "    - restore2 <file> : enhancement of restore"
         print "    - exit"
     elif (operation=="backup"):
         file_name=command[1]
@@ -27,10 +26,7 @@ while(True):
             print "ERROR - Invalid file path"
     elif (operation=="restore"):
         file_name=command[1]
-        shell.restore_file(file_name, "restoremodification")
-    elif (operation=="restore2"):
-        file_name=command[1]
-        shell.restore_file(file_name, "restoremodification2")
+        shell.restore_file(file_name)
     elif (operation=="delete"):
         file_name=command[1]
         shell.delete_file(file_name)
