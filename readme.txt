@@ -1,8 +1,9 @@
 ==== README ====
-EasyBackup is a cross-plataform application developed in Python to do Backups in a P2P 
-Architecture. Every peer have a daemon that is running in background and listening and 
-processing requests in multi-threading. All the configurations of the daemon are in the 
-file "settings.cfg". By default a Peer offer 5 GB of space to do backups in the Network. 
+EasyBackup is a cross-plataform application developed in Python to do Backups in 
+a P2P Architecture. Every peer have a daemon that is running in background and 
+listening and processing requests in multi-threading. All the configurations of 
+the daemon are in the file "settings.cfg". By default a Peer offer 5 GB of space 
+to receive backups requests from another peers. 
 
 ==== AUTHORS ====
 This project was done by two MIEIC students: Ana Gomes and Andre Freitas in the 
