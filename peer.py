@@ -330,7 +330,9 @@ class Peer:
             # check replication degree
             replication_degree=data.get_chunk_replication_degree(file_id, chunk_number)
             minimum_replication_degree=data.get_chunk_minimum_replication_degree(file_id , chunk_number)
+            print_message("Chunk replication degree is "+str(replication_degree) +  " and minimum is "+str(minimum_replication_degree))
             if(replication_degree<minimum_replication_degree):
+                print_message("Chunk replication degree is not enough. Sending a PUTCHUNK")
                 self.put_chunk(file_id,chunk_number,replication_degree)
             
             
