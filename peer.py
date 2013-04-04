@@ -264,7 +264,7 @@ class Peer:
             try:
                 body = message.split(CRLF+CRLF)[1]
             except:
-                print_message("Invalid message: "+message)
+                print_message("Invalid message from "+str(addr))
             if(len(body)<2): 
                 print_message("The PUTCHUNK split failed")
                 return False
