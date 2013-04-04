@@ -261,7 +261,10 @@ class Peer:
             file_id=message.split(" ")[2]
             chunk_number=message.split(" ")[3]
             now=datetime.now()
-            body = message.split(CRLF+CRLF)[1]
+            try:
+                body = message.split(CRLF+CRLF)[1]
+            except:
+                print_message("Invalid message: "+message)
             if(len(body)<2): 
                 print_message("The PUTCHUNK split failed")
                 return False
